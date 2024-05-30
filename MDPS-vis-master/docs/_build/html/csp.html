@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>csp module &mdash; MDPS visualization software 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=92fd9be5" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=f2a433a1"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="data module" href="data.html" />
+    <link rel="prev" title="Modules" href="modules.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            MDPS visualization software
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Installation Guide:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install_window.html">Windows 환경 설치 가이드</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install_linux.html">Linux 환경 설치 가이드</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Getting Started:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">프로그램 실행 가이드</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Modules</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">csp module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#csp.generate_csp"><code class="docutils literal notranslate"><span class="pre">generate_csp()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="data.html">data module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pbm.html">pbm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="track.html">track module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">MDPS visualization software</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">Modules</a></li>
+      <li class="breadcrumb-item active">csp module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/csp.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-csp">
+<span id="csp-module"></span><h1>csp module<a class="headerlink" href="#module-csp" title="Link to this heading"></a></h1>
+<p>해당 모듈은 complex steerable pyramid (CSP)를 생성하는 것을 담당한다.
+CSP는 <a class="reference internal" href="#csp.generate_csp" title="csp.generate_csp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">csp.generate_csp()</span></code></a> 함수를 통해 생성하며,
+나머지 함수들은 CSP 생성에 필요한 구성요소를 계산하는 함수이다.</p>
+<p>CSP의 핵심 개념은 Freeman and Adelson의 연구 <a class="reference internal" href="#r438ced67d76c-1" id="id1">[1]</a> 에 
+수록되어 있으며, 이 코드의 CSP 생성 기능은 PBM 알고리즘 원작자인 
+Wadhwa et al. <a class="reference internal" href="#r438ced67d76c-2" id="id2">[2]</a> 의 <a class="reference external" href="http://people.csail.mit.edu/nwadhwa/phase-video/">MATLAB 코드</a> 를 참고하여 구현했다.</p>
+<div role="list" class="citation-list">
+<div class="citation" id="r438ced67d76c-1" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
+<p>W.T. Freeman and E.H Adelson, “The design and use of steerable filters,” IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 13, no. 9, pp. 891-906, 1991.</p>
+</div>
+<div class="citation" id="r438ced67d76c-2" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">2</a><span class="fn-bracket">]</span></span>
+<p>N. Wadhwa et al., “Phase-based video motion processing,” ACM Transactions on Graphics, vol. 32, no. 4, pp. 1–10, 2013.</p>
+</div>
+</div>
+<dl class="py function">
+<dt class="sig sig-object py" id="csp.generate_csp">
+<span class="sig-prename descclassname"><span class="pre">csp.</span></span><span class="sig-name descname"><span class="pre">generate_csp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dimension</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_pyramids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_orientations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">twidth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#csp.generate_csp" title="Link to this definition"></a></dt>
+<dd><p>CSP와 CSP에 해당하는 인덱스를 생성한다. CSP와 인덱스는 추후 <a class="reference internal" href="pbm.html#pbm.PBM" title="pbm.PBM"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pbm.PBM()</span></code></a> 클래스의 인자로 사용된다.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>dimension: Union[List[int], Tuple[int, int]]</strong></dt><dd><p>CSP의 크기 (높이 x 너비). 영상의 크기와 동일하게 설정</p>
+</dd>
+<dt><strong>n_pyramid: int</strong></dt><dd><p>피라미드의 수. 과제 수행간의 기본값은 7.</p>
+</dd>
+<dt><strong>n_orientations: int</strong></dt><dd><p>피라미드의 방향 수. 과제 수행간의 기본값은 2.</p>
+</dd>
+<dt><strong>twidth: float</strong></dt><dd><p>CSP의 고깔 크기. 과제 수행간의 기본값은 1.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>filter, index: Tuple[List[cp.ndarray], List[Tuple[int, int]]]</dt><dd><p>filter는 CSP의 내용, index는 CSP의 인덱스를 의미한다. <strong>피라미드의 수는 n_pyramid x n_orientations + 2개</strong> 이다.
+filter는 높이 x 너비 형태의 cp.ndarray, 인덱스는 [(h_min, h_max), (w_min, w_max)] 형태의 튜플이다.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>cuPy 라이브러리 설치 후 GPU 환경에서만 동작한다.</p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="pbm.html#pbm.PBM" title="pbm.PBM"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pbm.PBM</span></code></a></dt><dd></dd>
+</dl>
+</div>
+<p class="rubric">Examples</p>
+<p>(1,024 x 1,024) 크기를 가진 영상을 처리하는 피라미드 수 3, 2방향, twidth 크기 1의 CSP는 다음과 같이 생성한다.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">csp</span> <span class="kn">import</span> <span class="n">generate_csp</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pyramid</span><span class="p">,</span> <span class="n">idx</span> <span class="o">=</span> <span class="n">generate_csp</span><span class="p">((</span><span class="mi">1024</span><span class="p">,</span> <span class="mi">1024</span><span class="p">),</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">idx</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="c1"># 5번째 피라미드의 인덱스: [(256, 768), (256, 768)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pyramid</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="c1"># 5번째 피라미드의 값을 가진 2차원 인덱스 표출</span>
+</pre></div>
+</div>
+<p>완성된 피라미드의 형상은 다음과 같다.</p>
+<img alt="_images/csp.png" src="_images/csp.png" />
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="modules.html" class="btn btn-neutral float-left" title="Modules" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="data.html" class="btn btn-neutral float-right" title="data module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright University of Seoul &amp; HYUNDAI MOBIS.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

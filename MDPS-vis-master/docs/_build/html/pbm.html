@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pbm module &mdash; MDPS visualization software 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=92fd9be5" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=f2a433a1"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="track module" href="track.html" />
+    <link rel="prev" title="data module" href="data.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            MDPS visualization software
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Installation Guide:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install_window.html">Windows 환경 설치 가이드</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install_linux.html">Linux 환경 설치 가이드</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Getting Started:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">프로그램 실행 가이드</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Modules</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="csp.html">csp module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data.html">data module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">pbm module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pbm.PBM"><code class="docutils literal notranslate"><span class="pre">PBM</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pbm.PBM.run"><code class="docutils literal notranslate"><span class="pre">PBM.run()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="track.html">track module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">MDPS visualization software</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">Modules</a></li>
+      <li class="breadcrumb-item active">pbm module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/pbm.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-pbm">
+<span id="pbm-module"></span><h1>pbm module<a class="headerlink" href="#module-pbm" title="Link to this heading"></a></h1>
+<p>이 모듈은 영상을 확대하는 기능을 수행한다.
+확대 알고리즘으로 phase-based magnification (PBM)을 사용하였으며,
+실제 구현은 An and Lee 의 연구 <a class="reference internal" href="#rcc67818d3f42-1" id="id1">[1]</a> 를 참고하였다.</p>
+<div role="list" class="citation-list">
+<div class="citation" id="rcc67818d3f42-1" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
+<p>J. An and S. Lee, “hase-Based Motion Magnification for Structural Vibration Monitoring at a Video Streaming Rate,” IEEE Access, vol. 10, pp. 123423-123435, 2022.</p>
+</div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>PBM 내 연산은 GPU에서 수행된다.
+이 파일 내 함수들은 GPU에서 동작되도록 구현되었으므로
+np.ndarray 타입 데이터를 인자로 사용하면 오동작한다.</p>
+</div>
+<dl class="py class">
+<dt class="sig sig-object py" id="pbm.PBM">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pbm.</span></span><span class="sig-name descname"><span class="pre">PBM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fir_filter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pyr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pyr_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude_outside_freq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_pyramid_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pbm.PBM" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>PBM을 수행하는 클래스. PBM을 사용하려면 <a class="reference internal" href="csp.html#csp.generate_csp" title="csp.generate_csp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">csp.generate_csp()</span></code></a> 로 생성된 CSP 및 그 인덱스 정보와
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">pbm.generate_fir_bandpass()</span></code> 로 생성된 bandpass filter 정보를 인자로 입력해야 한다.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">data</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">csp</span> <span class="kn">import</span> <span class="n">generate_csp</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pbm</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stream</span> <span class="o">=</span> <span class="n">VideoFileReader</span><span class="p">(</span><span class="s2">&quot;./input/1.0_new_dark.mp4&quot;</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># 24 FPS의 영상 &quot;./input/1.0_new_dark.mp4&quot;을 배속 다운샘플링 없이 읽어오는 스트림</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">img</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">read</span><span class="p">()</span> <span class="c1"># 첫 한 프레임 읽기</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pyramid</span><span class="p">,</span> <span class="n">pyr_idx</span> <span class="o">=</span> <span class="n">generate_csp</span><span class="p">((</span><span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">),</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># 이미지 크기를 가지는 피라미드 수 5, 방향 2 의 CSP 생성</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fir_filter</span> <span class="o">=</span> <span class="n">generate_fir_bandpass</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># 필터 크기(loop_range) 31, FPS 24에서 [0.01, 1] Hz 성분만 대역 통과하는 필터 생성</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pbm</span> <span class="o">=</span> <span class="n">PBM</span><span class="p">(</span><span class="n">fir_filter</span><span class="p">,</span> <span class="n">pyramid</span><span class="p">,</span> <span class="n">pyr_idx</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># 확대계수 5로 영상을 확대하는 PBM 객체 생성</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pbm</span><span class="o">.</span><span class="n">loop_range</span><span class="p">):</span> <span class="c1"># 초기화 작업 수행</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">img</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">x</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">pbm</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">x</span><span class="p">[:,:,</span><span class="mi">0</span><span class="p">],</span> <span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">while</span> <span class="n">condition</span><span class="p">:</span> <span class="c1"># 특정 조건을 만족할 때까지</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">img</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">x</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">x</span><span class="p">[:,:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">pbm</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">x</span><span class="p">[:,:,</span><span class="mi">0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">x</span> <span class="o">=</span> <span class="n">array2img</span><span class="p">(</span><span class="n">yiq2bgr</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="c1"># 확대된 프레임 x로 할 작업 수행</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="c1"># ...</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>fir_filter: cp.ndarray</strong></dt><dd><p>FIR 필터 배열. <code class="xref py py-meth docutils literal notranslate"><span class="pre">pbm.generate_fir_bandpass()</span></code> 함수로부터 생성</p>
+</dd>
+<dt><strong>pyr: List[cp.ndarray]</strong></dt><dd><p>CSP의 리스트. <a class="reference internal" href="csp.html#csp.generate_csp" title="csp.generate_csp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">csp.generate_csp()</span></code></a> 함수로부터 생성</p>
+</dd>
+<dt><strong>pyr_idx: List[Tuple[Tuple[int, int], Tuple[int, int]]]</strong></dt><dd><p>CSP의 인덱스. <a class="reference internal" href="csp.html#csp.generate_csp" title="csp.generate_csp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">csp.generate_csp()</span></code></a> 함수로부터 생성</p>
+</dd>
+<dt><strong>exclude_outside_freq: bool</strong></dt><dd><p>Bandpass 밖의 성분을 완전히 제거할지 결정하는 플래그. 기본값은 False</p>
+</dd>
+<dt><strong>skip_pyramid_level: int</strong></dt><dd><p>몇 개의 CSP 피라미드를 무시할지 결정하는 플래그. 기본값은 0</p>
+</dd>
+<dt><strong>alpha: float</strong></dt><dd><p>확대계수. 0인 경우 확대하지 않음.</p>
+</dd>
+<dt><strong>loop_range: int</strong></dt><dd><p>필터의 크기. fir_filter 멤버의 크기로부터 자동 계산됨.</p>
+</dd>
+<dt><strong>n_levels: int</strong></dt><dd><p>피라미드의 갯수. pyr 멤버의 크기로부터 자동 계산됨.</p>
+</dd>
+<dt><strong>xdim: int</strong></dt><dd><p>확대할 영상의 너비. pyr 멤버의 크기로부터 자동 계산되나, 입력 이미지와 크기가 다를 경우 오류가 발생하니 주의</p>
+</dd>
+<dt><strong>ydim: int</strong></dt><dd><p>확대할 영상의 높이. pyr 멤버의 크기로부터 자동 계산되나, 입력 이미지와 크기가 다를 경우 오류가 발생하니 주의</p>
+</dd>
+<dt><strong>vid_fft: List[cp.ndarray]</strong></dt><dd><p>PBM 계산을 위한 내부 버퍼</p>
+</dd>
+<dt><strong>phase_xqueue: List[cp.ndarray]</strong></dt><dd><p>PBM 계산을 위한 내부 버퍼</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pbm.PBM.run" title="pbm.PBM.run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run</span></code></a>(x[, init])</p></td>
+<td><p>입력된 프레임을 확대하는 메소드</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="pbm.PBM.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pbm.PBM.run" title="Link to this definition"></a></dt>
+<dd><p>입력된 프레임을 확대하는 메소드</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>x: cp.ndarray</strong></dt><dd><p>입력되는 프레임. YIQ 색공간의 Y에 해당하는 2차원 배열을 받는다.</p>
+</dd>
+<dt><strong>init: bool</strong></dt><dd><p>초기화에 사용되는 프레임인지를 결정하는 플래그.
+이 PBM 구현은 영상확대 이전 첫 loop_range와 같은 수의 프레임을 init=True 인 상태로 읽어와야 한다.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>magnified: cp.ndarray</dt><dd><p>확대된 프레임</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="data.html" class="btn btn-neutral float-left" title="data module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="track.html" class="btn btn-neutral float-right" title="track module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright University of Seoul &amp; HYUNDAI MOBIS.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
