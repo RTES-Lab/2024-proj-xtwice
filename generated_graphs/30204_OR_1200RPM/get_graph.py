@@ -25,6 +25,9 @@ def get_graph(csv_file : str):
         plt.title(f'Centered Values of {column}', size=15)
         plt.xlabel('Time[s]', size=15)
         plt.ylabel('Displacement[mm]', size=15)
+        plt.xticks(fontsize=13) 
+        plt.yticks(fontsize=13)
+        plt.ylim(-0.1, 0.1) 
         plt.savefig(f'{filename}_{column}_{csv_file[0].upper()}_axis.png')
         plt.close()
 

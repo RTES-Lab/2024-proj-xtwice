@@ -52,7 +52,7 @@ def compare_data(data, column : str, csv_file):
     plt.ylabel('Displacement[mm]', size=15)
     plt.ylim(-0.1, 0.1)
     plt.legend()  # 범례 추가
-    plt.savefig(os.path.join(root_dir, f'comparison_{column}_H_and_OR_{csv_file[0].upper()}_axis.png'))  # 그래프 저장
+    plt.savefig(os.path.join(root_dir, f'comparison_{column}_H_and_IR_{csv_file[0].upper()}_axis.png'))  # 그래프 저장
     print("Graphs saved successfully.")
 
 def get_compared_data(csv_file):
@@ -65,7 +65,7 @@ def get_compared_data(csv_file):
 
 
 root_dir = 'C:\Github\X-twice\generated_graphs\\'
-selected_folders = ['30204_OR_1200RPM', '30204_H_1200RPM']
+selected_folders = ['30204_IR_1200RPM', '30204_H_1200RPM']
 get_compared_data('y.csv')
 get_compared_data('z.csv')
 
