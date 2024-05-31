@@ -1,0 +1,13 @@
+*.ipynb
+*.npy
+.vscode
+__pycache__
+build
+dist
+*.spec
+*.npy
+
+input
+output
+xold
+test

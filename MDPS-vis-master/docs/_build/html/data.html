@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>data module &mdash; MDPS visualization software 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=92fd9be5" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=f2a433a1"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pbm module" href="pbm.html" />
+    <link rel="prev" title="csp module" href="csp.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            MDPS visualization software
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Installation Guide:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install_window.html">Windows 환경 설치 가이드</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install_linux.html">Linux 환경 설치 가이드</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Getting Started:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">프로그램 실행 가이드</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Modules</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="csp.html">csp module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">data module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#data.DataStream"><code class="docutils literal notranslate"><span class="pre">DataStream</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#data.DataStream.forward"><code class="docutils literal notranslate"><span class="pre">DataStream.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data.DataStream.read"><code class="docutils literal notranslate"><span class="pre">DataStream.read()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data.DataStream.transform"><code class="docutils literal notranslate"><span class="pre">DataStream.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#data.VideoFileReader"><code class="docutils literal notranslate"><span class="pre">VideoFileReader</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#data.VideoFileReader.read"><code class="docutils literal notranslate"><span class="pre">VideoFileReader.read()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#data.VideoFileStream"><code class="docutils literal notranslate"><span class="pre">VideoFileStream</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#data.VideoFileStream.read"><code class="docutils literal notranslate"><span class="pre">VideoFileStream.read()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#data.array2img"><code class="docutils literal notranslate"><span class="pre">array2img()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#data.bgr2yiq"><code class="docutils literal notranslate"><span class="pre">bgr2yiq()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#data.img2array"><code class="docutils literal notranslate"><span class="pre">img2array()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#data.yiq2bgr"><code class="docutils literal notranslate"><span class="pre">yiq2bgr()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pbm.html">pbm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="track.html">track module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">MDPS visualization software</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">Modules</a></li>
+      <li class="breadcrumb-item active">data module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/data.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-data">
+<span id="data-module"></span><h1>data module<a class="headerlink" href="#module-data" title="Link to this heading"></a></h1>
+<p>이 모듈은 데이터 입출력을 담당한다.
+현재는 영상 프레임이 지정된 동영상 파일로부터 들어온다고 가정한다.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>추후 PC에 연결한 카메라로부터 프레임을 직접 받아 처리하기 위해서는 별도로 <a class="reference internal" href="#data.DataStream" title="data.DataStream"><code class="xref py py-meth docutils literal notranslate"><span class="pre">data.DataStream()</span></code></a> 을
+상속받는 클래스를 추가로 구현해야 한다.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>PBM 내 연산을 제외한 다른 부분은 CPU에서 수행된다.
+data 모듈의 소스코드도 CPU에서 동작하도록 구현되었으므로 
+인자로 cp.ndarray 타입을 사용하면 오동작한다.</p>
+</div>
+<dl class="py class">
+<dt class="sig sig-object py" id="data.DataStream">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">data.</span></span><span class="sig-name descname"><span class="pre">DataStream</span></span><a class="headerlink" href="#data.DataStream" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>영상 데이터를 다루는 클래스들의 base 클래스이다.
+향후 추가되는 데이터 입출력 모듈은 이 클래스를 상속해야 하며,
+이 클래스의 메소드인 read, transform, forward를 구현해야 한다.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#data.DataStream.forward" title="data.DataStream.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward</span></code></a>()</p></td>
+<td><p>read와 transform을 순차적으로 수행하여 리턴하는 편의성을 위한 함수이다.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#data.DataStream.read" title="data.DataStream.read"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read</span></code></a>()</p></td>
+<td><p>스트림으로부터 프레임을 읽어오는 메소드.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#data.DataStream.transform" title="data.DataStream.transform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">transform</span></code></a>(x)</p></td>
+<td><p>읽어온 프레임을 PBM에서 사용할 수 있는 형태로 변환하는 메소드.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="data.DataStream.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#data.DataStream.forward" title="Link to this definition"></a></dt>
+<dd><p>read와 transform을 순차적으로 수행하여 리턴하는 편의성을 위한 함수이다.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt>np.ndarray</dt><dd><p>stream에서 읽어온 실수형 YIQ 색공간 배열</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data.DataStream.read">
+<span class="sig-name descname"><span class="pre">read</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#data.DataStream.read" title="Link to this definition"></a></dt>
+<dd><p>스트림으로부터 프레임을 읽어오는 메소드. 파생 클래스에서 재정의하여 사용한다.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt>np.ndarray</dt><dd><p>OpenCV BGR 이미지 형식의 이미지 배열</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data.DataStream.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#data.DataStream.transform" title="Link to this definition"></a></dt>
+<dd><p>읽어온 프레임을 PBM에서 사용할 수 있는 형태로 변환하는 메소드.
+uint8형 BGR 색공간 이미지를 [0, 1] 범위의 실수형 YIQ 색공간 이미지로 변환한다.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>x: np.ndarray</strong></dt><dd><p>OpenCV BGR 이미지 형식의 이미지 배열</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>np.ndarray</dt><dd><p>실수형 YIQ 색공간 배열</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="data.VideoFileReader">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">data.</span></span><span class="sig-name descname"><span class="pre">VideoFileReader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downsample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_skip_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#data.VideoFileReader" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#data.VideoFileStream" title="data.VideoFileStream"><code class="xref py py-class docutils literal notranslate"><span class="pre">VideoFileStream</span></code></a></p>
+<p><a class="reference internal" href="#data.VideoFileStream" title="data.VideoFileStream"><code class="xref py py-meth docutils literal notranslate"><span class="pre">VideoFileStream()</span></code></a> 과 동일한 기능을 수행하지만,
+이 클래스는 영상을 끝까지 읽었을 때 더이상 읽지 않고 <cite>None</cite> 을 리턴한다.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#data.VideoFileStream" title="data.VideoFileStream"><code class="xref py py-obj docutils literal notranslate"><span class="pre">data.VideoFileStream</span></code></a></dt><dd></dd>
+</dl>
+</div>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">data</span> <span class="kn">import</span> <span class="n">VideoFileReader</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stream</span> <span class="o">=</span> <span class="n">VideoFileReader</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;./input/mov.mp4&quot;</span><span class="p">,</span> <span class="n">fps</span><span class="o">=</span><span class="mi">24</span><span class="p">,</span> <span class="n">downsample</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frame_skip_rate</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># VideoFileStream과 동일한 방법으로 사용한다.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># 24FPS의 ./input/mov.mp4 파일을 다운샘플링과 배속 없이 가져오는 스트림 객체를 만든다.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">img</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">img</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="c1"># 예외처리 ...</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>filename: str</strong></dt><dd><p>영상 파일 경로</p>
+</dd>
+<dt><strong>downsample: bool</strong></dt><dd><p>영상을 1/2로 스케일링할지 여부</p>
+</dd>
+<dt><strong>frame_skip_rate: int</strong></dt><dd><p>영상 배속 옵션 (0인 경우 배속하지 않음, 1인 경우 2배속, 2인 경우 3배속, …)</p>
+</dd>
+<dt><strong>fps: int</strong></dt><dd><p>영상의 sampling rate(초당 프레임 수)</p>
+</dd>
+<dt><strong>cap: cv2.VideoCapture</strong></dt><dd><p>영상을 불러오는 OpenCV 라이브러리 객체</p>
+</dd>
+<dt><strong>dim: List[int]</strong></dt><dd><p>영상의 크기 (H x W x C)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><strong>read(self)</strong></p></td>
+<td><p>See <a class="reference internal" href="#data.DataStream" title="data.DataStream"><code class="xref py py-meth docutils literal notranslate"><span class="pre">data.DataStream()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>transform(self, x)</strong></p></td>
+<td><p>See <a class="reference internal" href="#data.DataStream" title="data.DataStream"><code class="xref py py-meth docutils literal notranslate"><span class="pre">data.DataStream()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>forward(self)</strong></p></td>
+<td><p>See <a class="reference internal" href="#data.DataStream" title="data.DataStream"><code class="xref py py-meth docutils literal notranslate"><span class="pre">data.DataStream()</span></code></a></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="data.VideoFileReader.read">
+<span class="sig-name descname"><span class="pre">read</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#data.VideoFileReader.read" title="Link to this definition"></a></dt>
+<dd><p>스트림으로부터 프레임을 읽어오는 메소드. 파생 클래스에서 재정의하여 사용한다.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt>np.ndarray</dt><dd><p>OpenCV BGR 이미지 형식의 이미지 배열</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="data.VideoFileStream">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">data.</span></span><span class="sig-name descname"><span class="pre">VideoFileStream</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downsample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_skip_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#data.VideoFileStream" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#data.DataStream" title="data.DataStream"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataStream</span></code></a></p>
+<p>비디오 파일을 반복적으로 읽어오는 클래스</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">data</span> <span class="kn">import</span> <span class="n">VideoFileStream</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stream</span> <span class="o">=</span> <span class="n">VideoFileStream</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;./input/mov.mp4&quot;</span><span class="p">,</span> <span class="n">fps</span><span class="o">=</span><span class="mi">24</span><span class="p">,</span> <span class="n">downsample</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frame_skip_rate</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># 24FPS의 ./input/mov.mp4 파일을 다운샘플링과 배속 없이 가져오는 스트림 객체를 만든다.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">img</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">img</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="c1"># 예외처리 ...</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>filename: str</strong></dt><dd><p>영상 파일 경로</p>
+</dd>
+<dt><strong>downsample: bool</strong></dt><dd><p>영상을 1/2로 스케일링할지 여부</p>
+</dd>
+<dt><strong>frame_skip_rate: int</strong></dt><dd><p>영상 배속 옵션 (0인 경우 배속하지 않음, 1인 경우 2배속, 2인 경우 3배속, …)</p>
+</dd>
+<dt><strong>fps: int</strong></dt><dd><p>영상의 sampling rate(초당 프레임 수)</p>
+</dd>
+<dt><strong>cap: cv2.VideoCapture</strong></dt><dd><p>영상을 불러오는 OpenCV 라이브러리 객체</p>
+</dd>
+<dt><strong>dim: List[int]</strong></dt><dd><p>영상의 크기 (H x W x C)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><strong>read(self)</strong></p></td>
+<td><p>See <a class="reference internal" href="#data.DataStream" title="data.DataStream"><code class="xref py py-meth docutils literal notranslate"><span class="pre">data.DataStream()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>transform(self, x)</strong></p></td>
+<td><p>See <a class="reference internal" href="#data.DataStream" title="data.DataStream"><code class="xref py py-meth docutils literal notranslate"><span class="pre">data.DataStream()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>forward(self)</strong></p></td>
+<td><p>See <a class="reference internal" href="#data.DataStream" title="data.DataStream"><code class="xref py py-meth docutils literal notranslate"><span class="pre">data.DataStream()</span></code></a></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="data.VideoFileStream.read">
+<span class="sig-name descname"><span class="pre">read</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#data.VideoFileStream.read" title="Link to this definition"></a></dt>
+<dd><p>스트림으로부터 프레임을 읽어오는 메소드. 파생 클래스에서 재정의하여 사용한다.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt>np.ndarray</dt><dd><p>OpenCV BGR 이미지 형식의 이미지 배열</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="data.array2img">
+<span class="sig-prename descclassname"><span class="pre">data.</span></span><span class="sig-name descname"><span class="pre">array2img</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#data.array2img" title="Link to this definition"></a></dt>
+<dd><p>[0.0, 1.0] 범위의 <cite>double</cite> 형 이미지 배열을 [0, 255] 범위의 <cite>uint8</cite> 형 이미지 배열로 스케일링한다.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>x: np.ndarray</strong></dt><dd><p>입력 이미지</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>y: np.ndarray</dt><dd><p>8비트 부호 없는 정수형 이미지</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="data.bgr2yiq">
+<span class="sig-prename descclassname"><span class="pre">data.</span></span><span class="sig-name descname"><span class="pre">bgr2yiq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#data.bgr2yiq" title="Link to this definition"></a></dt>
+<dd><p>입력 데이터의 색공간을 BGR에서 YIQ로 변환한다.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>img: np.ndarray</strong></dt><dd><p>입력 이미지</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>output: np.ndarray</dt><dd><p>YIQ 색공간 이미지</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="data.img2array">
+<span class="sig-prename descclassname"><span class="pre">data.</span></span><span class="sig-name descname"><span class="pre">img2array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#data.img2array" title="Link to this definition"></a></dt>
+<dd><p>[0, 255] 범위의 <cite>uint8</cite> 형 이미지 배열을 [0.0, 1.0] 범위의 <cite>double</cite> 형 이미지 배열로 스케일링한다.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>x: np.ndarray</strong></dt><dd><p>입력 이미지</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>y: np.ndarray</dt><dd><p>64비트 실수형 이미지</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="data.yiq2bgr">
+<span class="sig-prename descclassname"><span class="pre">data.</span></span><span class="sig-name descname"><span class="pre">yiq2bgr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#data.yiq2bgr" title="Link to this definition"></a></dt>
+<dd><p>입력 데이터의 색공간을 YIQ에서 BGR로 변환한다.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>img: np.ndarray</strong></dt><dd><p>입력 이미지</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>output: np.ndarray</dt><dd><p>BGR 색공간 이미지</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="csp.html" class="btn btn-neutral float-left" title="csp module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pbm.html" class="btn btn-neutral float-right" title="pbm module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright University of Seoul &amp; HYUNDAI MOBIS.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
