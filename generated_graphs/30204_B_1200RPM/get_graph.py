@@ -2,9 +2,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 
+# 현재 스크립트의 경로를 가져옴
+script_path = os.path.dirname(os.path.realpath(__file__))
 
-filename = os.getcwd().split('\\')[4]
+# 해당 경로로 이동
+os.chdir(script_path)
 
+filename = os.getcwd().split('/')[-1]
 
 def get_graph(csv_file : str):
 
