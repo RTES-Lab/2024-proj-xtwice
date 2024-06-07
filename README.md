@@ -7,5 +7,5 @@
 - 각 폴더 안에서 generate 그래프 실행 -> A,B,C,D 스티커에 대한 Y, Z축 변위 그래프 생성(총 8개)
 
 - 결과 예시
-![ex](https://github.com/Kseorang1218/X-twice/blob/main/generated_graphs/img/ex.png)
+![ex](https://github.com/Kseorang1218/X-twice/blob/main/img/ex.png)
 
