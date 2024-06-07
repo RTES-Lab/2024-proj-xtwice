@@ -1,10 +1,34 @@
+"""
+스티커의 HSV threshold를 설정하는 데 도움을 주는 프로그램
+해당 프로그램으로 얻은 threshold를 설정해 스티커의 변위를 추출한다
+"""
+
 import cv2
 import numpy as np
 
 def nothing(x):
     pass
 
-def get_first_frame(video_path):
+def get_first_frame(video_path: str):
+    """
+    영상의 첫번째 프레임 이미지를 가져오는 함수
+
+    Parameters
+    ----------
+    video_path: str
+        사용할 비디오 파일 경로
+
+    Returns
+    ----------
+    cap: numpy.ndarray
+        (height, width, channels) 형태의 배열
+
+    Examples
+    ----------
+    >>> video_path = "./input/0530_30204_B_1200RPM_120fps_1.mov"
+    >>> first_frame = get_first_frame(video_path)
+    """
+
     # 동영상 파일 열기
     cap = cv2.VideoCapture(video_path)
     
