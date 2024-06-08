@@ -8,6 +8,5 @@ dist
 *.npy
 
 input
-output
 xold
 test
