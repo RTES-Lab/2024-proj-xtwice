@@ -42,7 +42,7 @@ def get_data(
     ----------
     >>> script_path = os.path.dirname(os.path.realpath(__file__))
     >>> root_dir = os.path.dirname(script_path)
-    >>> selected_folders = ['0530_30204_OR_1200RPM_120fps_1','0530_30204_H_1200RPM_120fps_1']
+    >>> selected_folders = ['0609_30204_OR_1200RPM_120fps_1','0609_30204_H_1200RPM_120fps_1']
     >>> csv_file = 'x.csv'
     >>> columns = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
     >>> data = get_data(root_dir=root_dir, folder_list=selected_folders, csv_file=csv_file, columns=columns)
@@ -106,13 +106,13 @@ def compare_data(data: list, csv_file: str, column: str, bearing_type: str, sect
         df = df[:min_len]
         bearing = next((x for x in ['OR', 'H', 'IR', 'B'] if x in subdir), subdir)
         if bearing == 'OR':
-            mm_per_pixel = 0.111
+            mm_per_pixel = 0.073
         if bearing == 'H':
-            mm_per_pixel = 0.098
+            mm_per_pixel = 0.073 
         if bearing == 'IR':
-            mm_per_pixel = 0.075
+            mm_per_pixel = 0.074
         if bearing == 'B':
-            mm_per_pixel = 0.103
+            mm_per_pixel = 0.072
         plt.plot(df.index / 120, df[column] * mm_per_pixel, label=bearing)
 
     plt.title(f'Comparison of {column}, {bearing_type.replace("_", " ")}', size=15)
@@ -143,7 +143,7 @@ def get_compared_data(csv_files, columns, bearing_type, section_type):
 
     Examples
     ----------
-    >>> selected_folders = ['0530_30204_OR_1200RPM_120fps_1','0530_30204_H_1200RPM_120fps_1']
+    >>> selected_folders = ['0609_30204_OR_1200RPM_120fps_1','0609_30204_H_1200RPM_120fps_1']
     >>> bearing_type = 'OR_and_H'
     >>> section_type = 'section1'
     >>> columns = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
@@ -167,23 +167,20 @@ if __name__=="__main__":
     # 상위 폴더 경로
     root_dir = os.path.dirname(script_path)
 
-    selected_folders = ['0609_30204_B_1200RPM_120fps_7','0609_30204_H_1200RPM_120fps_7']
+    selected_folders = ['0609_30204_B_1200RPM_120fps_1','0609_30204_H_1200RPM_120fps_1']
     bearing_type = 'B_and_H'
 
-    # selected_folders = ['0609_30204_IR_1200RPM_120fps_7','0609_30204_H_1200RPM_120fps_7']
+    # selected_folders = ['0609_30204_IR_1200RPM_120fps_1','0609_30204_H_1200RPM_120fps_1']
     # bearing_type = 'IR_and_H'
 
-    # selected_folders = ['0609_30204_OR_1200RPM_120fps_7','0609_30204_H_1200RPM_120fps_7']
+    # selected_folders = ['0609_30204_OR_1200RPM_120fps_1','0609_30204_H_1200RPM_120fps_1']
     # bearing_type = 'OR_and_H'
 
+    section_type = 'section1'
 
-    # selected_folders = ['0609_30204_IR_1200RPM_120fps_7','0609_30204_OR_1200RPM_120fps_7']
-    # bearing_type = 'IR_and_OR'
-
-    section_type = 'section7'
 
     if selected_folders[0][-1] == "1":
-        columns = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+        columns = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
     else:
         columns = ['A', 'B']
 
