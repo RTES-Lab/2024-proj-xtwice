@@ -209,8 +209,6 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
 
-    if os.path.isdir(args.output):
-        raise ValueError("Existing directory")
     if os.path.isfile(args.output):
         raise ValueError("Existing file name")
     os.makedirs(args.output)
