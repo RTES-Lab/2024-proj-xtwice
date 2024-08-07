@@ -16,6 +16,8 @@ n_ma = 5
 max_frames = 9999
 cut_frames = 0
 
+config = load_yaml('./config.yaml')
+
 def extract_displacement(filename, roi_file, output_dir, fps, frame_skip_rate, filter_order, freq_lb, freq_ub, alpha):
     video_sampling_rate = fps // (frame_skip_rate + 1)
     loop_range = filter_order + 1
@@ -40,9 +42,9 @@ def extract_displacement(filename, roi_file, output_dir, fps, frame_skip_rate, f
         img_pbm = crop_roi(img_crop, idx_pbm)
         x = stream.transform(img_pbm)[:,:,0]
         pbm.run(x, True)
-    
+
     # (100, 150, 50), (140, 255, 255) -> (90, 120, 60), (115, 255, 255) -> (97, 0, 114), (115, 255, 231) -> (90, 50, 60), (140, 255, 255)
-    tracker = MarkerCentroidTracker((90, 50, 60), (140, 255, 255))
+    tracker = MarkerCentroidTracker(tuple(config.lb), tuple(config.ub))
     tracker.roi = Location(x=0, y=0, w=img_crop.shape[1], h=img_crop.shape[0])
     tracker.track_region = coord
 
