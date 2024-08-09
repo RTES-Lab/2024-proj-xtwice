@@ -1,0 +1,4 @@
+<resources>
+    <string name="thumbnail">Thumbnail</string>
+    <string name="app_name">Use OpenCV with CMake and Kotlin</string>
+</resources>
