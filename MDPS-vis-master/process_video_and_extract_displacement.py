@@ -7,8 +7,8 @@ from utils import *
 
 config = load_yaml('./config.yaml')
 
-input_mov_file = f"{config.date}_{config.bearing_type}_{config.fault_type}_{config.rpm}RPM_{config.fps}fps_{config.location}.mov"
-json_file = f"{config.date}_{config.bearing_type}_{config.fault_type}_{config.rpm}RPM_{config.fps}fps_{config.location}.json"
+input_mov_file = f"{config.date}_{config.bearing_type}_{config.fault_type}_{config.rpm}.mov"
+json_file = f"{config.date}_{config.bearing_type}_{config.fault_type}_{config.rpm}.json"
 
 get_roi_command = (
     f"python ./example/get_roi.py "
@@ -21,7 +21,7 @@ extract_displacement_conmmand = (
     f"python ./example/extract_displacement.py "
     f"-fname ./input/{input_mov_file} "
     f"-f {config.fps} -skip {config.skip} "
-    f"-o ./output/{config.date}/{config.date}_{config.bearing_type}_{config.fault_type}_{config.rpm}RPM_{config.fps}fps_{config.location} "
+    f"-o ./output/{config.date}/{config.date}_{config.bearing_type}_{config.fault_type}_{config.rpm} "
     f"-fo {config.fo} -flb {config.flb} -fub {config.fub} -a {config.a} "
     f"-roi ./test/{json_file} "
 )

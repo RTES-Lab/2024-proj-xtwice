@@ -1,4 +1,3 @@
-*.ipynb
 *.npy
 .vscode
 __pycache__
@@ -10,3 +9,5 @@ dist
 input
 xold
 test
+
+data/

@@ -5,6 +5,11 @@
 
 import cv2
 import numpy as np
+from utils import *
+
+config = load_yaml('./config.yaml')
+input_mov_file = f"{config.date}_{config.bearing_type}_{config.fault_type}_{config.rpm}.mov"
+
 
 def nothing(x):
     pass
@@ -49,7 +54,7 @@ def get_first_frame(video_path: str):
     return frame
 
 def main():
-    video_path = "./input/0530_30204_B_1200RPM_120fps_1.mov"  # 동영상 파일 경로 입력
+    video_path = f"./input/{input_mov_file}"  # 동영상 파일 경로 입력
     first_frame = get_first_frame(video_path)
     
     if first_frame is None:
