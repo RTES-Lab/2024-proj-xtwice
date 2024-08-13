@@ -1,0 +1,25 @@
+seed: 42
+
+max_length: 1000
+batch_size: 32
+sample_length: 256
+shift: 128
+epoch: 200
+
+label_map:
+  H:  0
+  B:  1
+  IR: 2
+  OR: 3
+
+csv_files:
+  - 'x.csv'
+  - 'z.csv'
+output_dir: '../output'
+date: '0724'
+bearing_type: '30204'
+rpm: '1200'
+max_len: 1000
+
+epoch: 200
+
