@@ -23,3 +23,5 @@ max_len: 1000
 
 epoch: 200
 
+
+sticker_label: 'B'

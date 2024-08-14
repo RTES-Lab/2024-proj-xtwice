@@ -5,9 +5,11 @@ from funs.databuilder import *
 from funs.dataset import *
 from funs.processing import *
 from funs.model import *
-from funs.trainer import *
+from funs.plmodule import *
 
 from torch.utils.data import DataLoader
+import pytorch_lightning as pl
+from pytorch_lightning.callbacks import ModelCheckpoint
 
 # load yaml
 config = load_yaml('./model_config.yaml')
@@ -20,18 +22,18 @@ else:
     DEVICE = torch.device('cpu')
 
 
+sticker_label = f'{config.sticker_label}data'
+
+
 output_root = os.path.join(config.output_dir, config.date)
 
 df = make_dataframe(output_root, config)
 
-Adata, Alabel = build_from_dataframe(df, config.sample_length, config.shift, data_column='Adata', is_onehot=False)
-Bdata, Blabel = build_from_dataframe(df,  config.sample_length, config.shift, data_column='Bdata', is_onehot=False)
+data, label = build_from_dataframe(df, config.sample_length, config.shift, data_column=sticker_label, is_onehot=False)
 
-train_dataset_A = NumpyDataset(data=Adata, label=Alabel, transform=NpToTensor(), target_transform=NpToTensor())
-train_dataset_B = NumpyDataset(data=Bdata, label=Blabel, transform=NpToTensor(), target_transform=NpToTensor())
+train_dataset = NumpyDataset(data=data, label=label, transform=NpToTensor(), target_transform=NpToTensor())
 
-train_loader_A = DataLoader(dataset=train_dataset_A, batch_size=config.batch_size, shuffle=True, drop_last=False)
-train_loader_B = DataLoader(dataset=train_dataset_B, batch_size=config.batch_size, shuffle=True, drop_last=False)
+train_loader = DataLoader(dataset=train_dataset, batch_size=config.batch_size, shuffle=True, drop_last=False, num_workers=3)
 
 model = Simple1DCNN(num_classes=4).to(DEVICE)
 
@@ -39,28 +41,26 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 loss = torch.nn.CrossEntropyLoss()
 
 
-train_acc_list = []
-train_loss_list = []
+training_module = PlModule(model, optimizer, loss)
 
-for epoch in range(1, config.epoch + 1):
-    train_loss, train_accuracy = train(model, train_loader_A, optimizer, DEVICE, loss, config.batch_size)
-    train_acc_list.append(train_accuracy)
-    train_loss_list.append(train_loss)
-    print("[EPOCH: {}] \tTrain Loss: {:.4f}, \tTrain Accuracy: {:.4f}".format(
-        epoch, train_loss, train_accuracy))
-    
-plot_training_curves(train_loss_list, train_acc_list, data='A')
+ckpt_callback = ModelCheckpoint(
+    dirpath='./saved',
+    filename=f"{sticker_label[0]}_{config.epoch:02d}",
+    monitor = 'train_loss',
+    save_top_k = 1,
+    mode = 'min'
+)
 
+metrics_logger = MetricsLogger()
 
-train_acc_list = []
-train_loss_list = []
+trainer = pl.Trainer(
+    accelerator="gpu",
+    max_epochs=config.epoch,
+    callbacks=[ckpt_callback, metrics_logger],
+    log_every_n_steps=1,
+    default_root_dir="./saved",
+    )
 
-for epoch in range(1, config.epoch + 1):
-    train_loss, train_accuracy = train(model, train_loader_B, optimizer, DEVICE, loss, config.batch_size)
-    train_acc_list.append(train_accuracy)
-    train_loss_list.append(train_loss)
-    print("[EPOCH: {}] \tTrain Loss: {:.4f}, \tTrain Accuracy: {:.4f}".format(
-        epoch, train_loss, train_accuracy))
+trainer.fit(training_module, train_loader)
 
-
-plot_training_curves(train_loss_list, train_acc_list, data='B')
+plot_training_curves(metrics_logger.train_losses, metrics_logger.train_accuracies, data=sticker_label[0])
