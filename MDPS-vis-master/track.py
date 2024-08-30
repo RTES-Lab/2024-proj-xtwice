@@ -165,7 +165,6 @@ class MarkerTracker(ROIBase):
 
     def binarize(self, frame):
         frame_roi = self.extract_roi(frame)
-
         frame_roi = cv2.GaussianBlur(frame_roi, self.gaussian_kernel_size, 0)
         frame_roi = cv2.cvtColor(frame_roi, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(frame_roi, self.lb, self.ub)

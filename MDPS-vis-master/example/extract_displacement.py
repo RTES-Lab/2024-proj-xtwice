@@ -13,12 +13,17 @@ from pbm import PBM, generate_fir_bandpass
 from utils import *
 
 n_ma = 5
-max_frames = 9999
+max_frames = 999999
 cut_frames = 0
 
 def extract_displacement(filename, roi_file, output_dir, fps, frame_skip_rate, filter_order, freq_lb, freq_ub, alpha):
     video_sampling_rate = fps // (frame_skip_rate + 1)
     loop_range = filter_order + 1
+
+    # 확장자 앞에 _Start 추가
+    parts = filename.rsplit('.mov', 1)
+    filename_with_start = parts[0] + '_Start.mov'
+    mean_qx, mean_qy = find_center(filename_with_start, video_sampling_rate, frame_skip_rate, roi_file)
 
     stream = VideoFileReader(filename, video_sampling_rate, False, frame_skip_rate)
 
@@ -78,23 +83,34 @@ def extract_displacement(filename, roi_file, output_dir, fps, frame_skip_rate, f
     m_qx = np.zeros((qx.shape[0]-n_ma+1, qx.shape[1]))
     m_qy = np.zeros((qy.shape[0]-n_ma+1, qy.shape[1]))
 
-    for i in range(qx.shape[1]):
-        m_qx[:,i] = moving_average(qx[:,i], n_ma)
-    for i in range(qy.shape[1]):
-        m_qy[:,i] = moving_average(qy[:,i], n_ma)
+    # for i in range(qx.shape[1]):
+    #     m_qx[:,i] = moving_average(qx[:,i], n_ma)
+    # for i in range(qy.shape[1]):
+    #     m_qy[:,i] = moving_average(qy[:,i], n_ma)
 
     # 파일명은 원하는대로 설정할것
     # np.save(f"{output_dir}/new_xmag2.npy", qx)
     # np.save(f"{output_dir}/new_ymag2.npy", qy)
 
-    hide_idx = np.where(qy == -1)
-    qqy = idx_crop.h - qy
-    qqx = idx_crop.w - qx
-    qqy[hide_idx] = -1
+    # hide_idx = np.where(qy == -1)
+    # qqy = idx_crop.h - qy
+    # qqx = idx_crop.w - qx
+    # qqy[hide_idx] = -1
+
+    print(qx.shape)
+    print(mean_qx.shape)
+    print(mean_qx)
+    print(qy.shape)
+    print(mean_qy.shape)
+    print(mean_qy)
+    qqx = qx - mean_qx
+    qqy = qy - mean_qy
 
     np.savetxt(f"{output_dir}/x.csv", qqx, fmt="%.18f", delimiter=",")
     np.savetxt(f"{output_dir}/y.csv", qqy, fmt="%.18f", delimiter=",")
 
+    # 동영상은 만들지 않음
+    return
 
     x0 = np.mean(m_qx[:50, :], axis=0)
     y0 = np.mean(m_qy[:50, :], axis=0)
