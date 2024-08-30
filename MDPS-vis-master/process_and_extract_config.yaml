@@ -1,11 +1,13 @@
 # 실험 환경 관련 파라미터
 # 영상 위치 번호
-date: '0530'
+video_root: './videos/'
+date: '0828'
 bearing_type: '30204'
-fault_type: 'OR'
+fault_type: 'H'
 rpm: 1200
 fps: 120
-location: 1
+axis: 'X'
+
 
 
 # 변위 추출 파라미터

@@ -60,7 +60,7 @@ def get_coordinates(img):
     cv2.setMouseCallback('Image', get_mouse_click)
 
     # 40 -> 100 -> 120 -> 140 변경
-    cv2.createTrackbar("ROI Size (px)", "Image", 5, 140, dummy_callback)
+    cv2.createTrackbar("ROI Size (px)", "Image", 5, 200, dummy_callback)
 
     while True:
         roi_size = cv2.getTrackbarPos("ROI Size (px)", "Image")
@@ -88,9 +88,45 @@ def get_coordinates(img):
     return ret, roi_size
 
 
-def moving_average(a,n):
-    N=len(a)
-    return np.array([np.mean(a[i:i+n]) for i in np.arange(0,N-n+1)])
+def find_center(filename, video_sampling_rate, frame_skip_rate, roi_file, lb, ub):
+    stream = VideoFileReader(filename, video_sampling_rate, False, frame_skip_rate)
+    img = stream.read()
+    idx_crop, idx_pbm, coord = region_from_json(roi_file)
+
+    for _ in range(1):
+        img = stream.read()
+        img_crop = crop_roi(img, idx_crop)
+        img_pbm = crop_roi(img_crop, idx_pbm)
+        x = stream.transform(img_pbm)[:,:,0]
+
+    tracker = MarkerCentroidTracker(lb, ub)
+    tracker.roi = Location(x=0, y=0, w=img_crop.shape[1], h=img_crop.shape[0])
+    tracker.track_region = coord
+    qx = []
+    qy = []
+
+    cnt_frame = 0
+    
+    for _ in range(9999):
+        cnt_frame = cnt_frame+1
+        img = stream.read()
+        if img is None:
+            break
+        img = crop_roi(img, idx_crop)
+
+        mask = tracker.binarize(img)
+        trackpoints = tracker.extract_trackpoint(mask)
+        qy.append([item.y for item in trackpoints])
+        qx.append([item.x for item in trackpoints])
+    # qx와 qy를 NumPy 배열로 변환합니다.
+    np_qx = np.array(qx)
+    np_qy = np.array(qy)
+
+    # 배열의 모든 요소에 대해 평균을 계산합니다.
+    mean_qx = np.mean(np_qx, axis=0)
+    mean_qy = np.mean(np_qy, axis=0)
+    print(mean_qx, mean_qy)
+    return mean_qx, mean_qy
 
 # 이미지 ROI, 추적점, 확대반경을 추출하는 함수
 def region_from_ui(img):
@@ -111,15 +147,15 @@ def region_from_ui(img):
     coord, roi_size = get_coordinates(img_disp)
     coord = [x*downsize_ratio for x in coord]
 
-    print("왼쪽 랙바가 움직이는 영역을 선택하세요.")
-    idx_left_bar = get_roi(img_disp)
-    idx_left_bar = idx_left_bar * downsize_ratio
-    coord.append(idx_left_bar)
+    # print("왼쪽 랙바가 움직이는 영역을 선택하세요.")
+    # idx_left_bar = get_roi(img_disp)
+    # idx_left_bar = idx_left_bar * downsize_ratio
+    # coord.append(idx_left_bar)
 
-    print("오른쪽 랙바가 움직이는 영역을 선택하세요.")
-    idx_right_bar = get_roi(img_disp)
-    idx_right_bar = idx_right_bar * downsize_ratio
-    coord.append(idx_right_bar)
+    # print("오른쪽 랙바가 움직이는 영역을 선택하세요.")
+    # idx_right_bar = get_roi(img_disp)
+    # idx_right_bar = idx_right_bar * downsize_ratio
+    # coord.append(idx_right_bar)
 
     print(coord)
 
