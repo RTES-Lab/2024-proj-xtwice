@@ -23,10 +23,14 @@ class PlModule(pl.LightningModule):
 
         prediction = torch.argmax(output, dim=1)
         # correct += prediction.eq(label.view_as(prediction)).sum().item()
-        acc = accuracy(prediction, label)
+        acc_tot = accuracy(prediction, label)
+        acc_per_class = accuracy(prediction, label, num_classes=4, average='none')
 
         self.log('train_loss', loss, prog_bar=True, on_step=False, on_epoch=True)
-        self.log('train_acc', acc, prog_bar=True, on_step=False, on_epoch=True)
+        self.log('train_acc', acc_tot, prog_bar=True, on_step=False, on_epoch=True)
+
+        for i, acc in enumerate(acc_per_class):
+            print(f'train_acc_step_class_{i}', acc)
 
         return loss
     
