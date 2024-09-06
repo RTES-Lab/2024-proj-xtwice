@@ -104,8 +104,8 @@ def compare_data(data: list, csv_file: str, column: str, bearing_type: str, sect
 
     for subdir, df in data:
         df = df[:min_len]
-        section = subdir[82:]
-        plt.plot(df.index / 120, df[column] * 0.0722222, label=section)
+        bearing = next((x for x in ['OR', 'H', 'IR', 'B'] if x in subdir), subdir)
+        plt.plot(df.index / 120, df[column] * 0.0722222, label=bearing)
 
     plt.title(f'Comparison of {column}, {bearing_type.replace("_", " ")}', size=15)
     plt.xlabel('Time[s]', size=15)
@@ -159,13 +159,21 @@ if __name__=="__main__":
     # 상위 폴더 경로
     root_dir = os.path.dirname(script_path)
 
-    bearing_type = 'IR'
-    selected_folders = [f'0530_30204_{bearing_type}_1200RPM_120fps_4',f'0530_30204_{bearing_type}_1200RPM_120fps_5',
-                        f'0530_30204_{bearing_type}_1200RPM_120fps_7']
+    # selected_folders = ['0530_30204_B_1200RPM_120fps_1','0530_30204_H_1200RPM_120fps_1']
+    # bearing_type = 'B_and_H'
 
-    section_type = 'all'
+    # selected_folders = ['0530_30204_IR_1200RPM_120fps_1','0530_30204_H_1200RPM_120fps_1']
+    # bearing_type = 'IR_and_H'
 
-    columns = ['A', 'B']
+    selected_folders = ['0530_30204_OR_1200RPM_120fps_1','0530_30204_H_1200RPM_120fps_1']
+    bearing_type = 'OR_and_H'
+
+    section_type = 'section1'
+
+    if selected_folders[0][-1] == "1":
+        columns = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+    else:
+        columns = ['A', 'B']
 
     if selected_folders[0][-1] in ["4", "5", "7"]:
         csv_files = ['y.csv', 'z.csv']
