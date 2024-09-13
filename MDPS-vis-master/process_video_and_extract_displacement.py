@@ -96,7 +96,7 @@ if __name__=="__main__":
         'date': '0828',
         'bearing_type': '30204',
         'fault_type': 'H',
-        'axis': 'S'
+        'axis': 'T'
     }
     ########################
     yaml_config = load_yaml('./process_and_extract_config.yaml')
