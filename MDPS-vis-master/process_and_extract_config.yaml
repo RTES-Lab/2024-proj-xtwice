@@ -1,13 +1,29 @@
-# 실험 환경 관련 파라미터
-# 영상 위치 번호
-video_root: './videos/'
-date: '0828'
-bearing_type: '30204'
-fault_type: 'H'
+video_root: './videos'
+output_root: './output'
+
 rpm: 1200
 fps: 120
-axis: 'X'
 
+fault_type_list:
+  - 'H'
+  - 'IR'
+  - 'OR'
+  - 'B'
+
+axis_list:
+  - 'F'
+  - 'S'
+  - 'T'
+
+axis_to_csv_dic:
+  'F': ['x.csv', 'z.csv']
+  'S': ['y.csv', 'z.csv']
+  'T': ['x.csv', 'y.csv']
+
+axis_to_marker_dic:
+  'F' : ['A', 'B']
+  'S' : ['A', 'B']
+  'T' : ['A', 'B', 'C', 'D', 'E']
 
 
 # 변위 추출 파라미터
@@ -16,6 +32,3 @@ fo: 14
 flb: 0.01
 fub: 1.0
 a: 0
-
-lb: [90, 50, 60]
-ub: [140, 255, 255]

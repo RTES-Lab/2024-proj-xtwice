@@ -18,14 +18,18 @@ cut_frames = 0
 
 config = load_yaml('./process_and_extract_config.yaml')
 
-def extract_displacement(filename, roi_file, output_dir, fps, frame_skip_rate, filter_order, freq_lb, freq_ub, alpha):
+def extract_displacement(
+        filename, roi_file, output_dir, fps, frame_skip_rate, filter_order, freq_lb, freq_ub, alpha,
+        hsv_min, hsv_max
+        ):
     video_sampling_rate = fps // (frame_skip_rate + 1)
     loop_range = filter_order + 1
 
     # 확장자 앞에 _Start 추가
     parts = filename.rsplit('.mov', 1)
+    axis = parts[0][-1]
     filename_with_start = parts[0] + '_Start.mov'
-    mean_qx, mean_qy = find_center(filename_with_start, video_sampling_rate, frame_skip_rate, roi_file, tuple(config.lb), tuple(config.ub))
+    mean_qx, mean_qy = find_center(filename_with_start, video_sampling_rate, frame_skip_rate, roi_file, tuple(hsv_min), tuple(hsv_max))
 
     stream = VideoFileReader(filename, video_sampling_rate, False, frame_skip_rate)
 
@@ -49,7 +53,7 @@ def extract_displacement(filename, roi_file, output_dir, fps, frame_skip_rate, f
         pbm.run(x, True)
 
     # (100, 150, 50), (140, 255, 255) -> (90, 120, 60), (115, 255, 255) -> (97, 0, 114), (115, 255, 231) -> (90, 50, 60), (140, 255, 255)
-    tracker = MarkerCentroidTracker(tuple(config.lb), tuple(config.ub))
+    tracker = MarkerCentroidTracker(tuple(hsv_min), tuple(hsv_max))
     tracker.roi = Location(x=0, y=0, w=img_crop.shape[1], h=img_crop.shape[0])
     tracker.track_region = coord
 
@@ -108,8 +112,8 @@ def extract_displacement(filename, roi_file, output_dir, fps, frame_skip_rate, f
     qqx = qx - mean_qx
     qqy = qy - mean_qy
 
-    np.savetxt(f"{output_dir}/x.csv", qqx, fmt="%.18f", delimiter=",")
-    np.savetxt(f"{output_dir}/y.csv", qqy, fmt="%.18f", delimiter=",")
+    np.savetxt(f"{output_dir}/{config.axis_to_csv_dic[axis][0]}", qqx, fmt="%.18f", delimiter=",")
+    np.savetxt(f"{output_dir}/{config.axis_to_csv_dic[axis][1]}", qqy, fmt="%.18f", delimiter=",")
 
     # 동영상은 만들지 않음
     return
@@ -224,6 +228,8 @@ if __name__ == "__main__":
     parser.add_argument("-fub", "--freq-ub", dest="freq_ub", required=True, type=float)
     parser.add_argument("-a", "--alpha", dest="alpha", required=True, type=float)
     parser.add_argument("-roi", "--roi-file", dest="roi_file", required=True, type=str)
+    parser.add_argument("-hsvmin", "--hsv-min", dest="hsv_min", required=True, nargs='+', type=int)
+    parser.add_argument("-hsvmax", "--hsv-mac", dest="hsv_max", required=True, nargs='+', type=int)
     
     args = parser.parse_args()
 
@@ -247,11 +253,14 @@ if __name__ == "__main__":
         raise ValueError("Frame skip rate must be >= 0")
 
     extract_displacement(filename=args.filename,
-                         roi_file=args.roi_file,
-                         output_dir=args.output,
-                         fps=args.fps,
-                         frame_skip_rate=args.frame_skip_rate,
-                         filter_order=args.filter_order,
-                         freq_lb=args.freq_lb,
-                         freq_ub=args.freq_ub,
-                         alpha=args.alpha)
+                        roi_file=args.roi_file,
+                        output_dir=args.output,
+                        fps=args.fps,
+                        frame_skip_rate=args.frame_skip_rate,
+                        filter_order=args.filter_order,
+                        freq_lb=args.freq_lb,
+                        freq_ub=args.freq_ub,
+                        alpha=args.alpha,
+                        hsv_min = args.hsv_min,
+                        hsv_max = args.hsv_max
+                        )
