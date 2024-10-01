@@ -1,33 +1,112 @@
-"""
-변위 추출 파이썬 파일을 한번에 실행할 수 있는 프로그램
-더불어, 지금까지 사용한 threshold를 값을 기록한다.
-"""
+'''
+변위 추출을 한번에 실행할 수 있는 파이썬 파일 
+변위를 추출하고자 하는 영상의 날짜, 결함 종류, axis 등을 제대로 입력해야
+원하는 결과를 얻을 수 있음에 유의
+'''
 
+import sys
+
+if sys.platform == 'win32':
+    import os
+    os.environ['PYTHONUTF8'] = '1'
 
 import os
+from utils import *
 
-# 영상 위치 번호
-i: int = 1
+from get_threshold import get_first_frame, get_hsv
 
-# 영상에 사용된 베어링 타입
-bearing_type: str = "OR"
 
-os.system(f"python ./example/get_roi.py -fname ./input/0530_30204_{bearing_type}_1200RPM_120fps_{i}.mov -f 120 -o ./test/0530_30204_{bearing_type}_1200RPM_120fps_{i}.json")
-os.system(f"python ./example/extract_displacement.py -fname ./input/0530_30204_{bearing_type}_1200RPM_120fps_{i}.mov -f 120 -skip 0 -o ./output/0530_30204_{bearing_type}_1200RPM_120fps_{i} -fo 14 -flb 0.01 -fub 1.0 -a 0 -roi ./test/0530_30204_{bearing_type}_1200RPM_120fps_{i}.json ")
+def get_hsv_param(input_mov_file: str):
+    '''
+    hsv 파라미터 구하는 함수
+    '''
 
-'''
-B, 1 :     tracker = MarkerCentroidTracker((90, 75, 90), (128, 255, 255))
-B, 2 :    tracker = MarkerCentroidTracker((103, 189, 0), (179, 255, 255))
-B, 3 :     tracker = MarkerCentroidTracker((100, 167, 219), (179, 255, 255))
-B, 4 :     tracker = MarkerCentroidTracker((100, 145, 140), (179, 255, 255))
-B, 5 :     tracker = MarkerCentroidTracker((25, 125, 125), (100, 255, 255))
-B, 6 :     tracker = MarkerCentroidTracker((100, 200, 120), (179, 255, 255))
-B, 7 :     tracker = MarkerCentroidTracker((100, 145, 140), (179, 255, 255))
+    input_video = f'{yaml_config.video_root}/{input_mov_file}'
+    first_frame = get_first_frame(input_video)
 
-IR, 1 :     tracker = MarkerCentroidTracker((28, 75, 75), (121, 255, 255))
-IR, 2 :     tracker = MarkerCentroidTracker((100,140, 100), (179, 255, 255))
-IR, 3 :     tracker = MarkerCentroidTracker((100, 130, 170), (179, 255, 255))
-IR, 4 :     tracker = MarkerCentroidTracker((100, 145, 140), (179, 255, 255))
-IR, 5 :     tracker = MarkerCentroidTracker((25, 125, 125), (100, 255, 255))
-IR, 6 :     tracker = MarkerCentroidTracker((100, 200, 120), (179, 255, 255))
-'''
+    # hsv 파라미터(hsv_min, hsv_max) 계산
+    hsv_min, hsv_max  = get_hsv(first_frame)
+
+    print(f"{input_mov_file}'s HSV parameters are:")
+    print(f'H Min: {hsv_min[0]}, S Min: {hsv_min[1]}, V Min: {hsv_min[2]}')
+    print(f'H Max: {hsv_max[0]}, S Max: {hsv_max[1]}, V Max: {hsv_max[2]}')
+
+    # hsv 파라미터 값 리턴
+    return list(hsv_min), list(hsv_max)
+
+
+def get_roi(input_mov_file: str, json_file: str):
+    '''
+    get_roi.py 실행
+    '''
+    get_roi_command = (
+    f"python ./example/get_roi.py "
+    f"-fname {yaml_config.video_root}/{input_mov_file} "
+    f"-f {yaml_config.fps} "
+    f"-o ./input/0927/0814_30204_B_S/{json_file}"
+    )
+
+    os.system(get_roi_command)
+
+
+def extract_displacement(input_mov_file: str, json_file: str, output_dir: str, hsv_params: tuple):
+    '''
+    extract_displacement.py 실행
+    이 과정에서 쓰인 hsv 값은 get_hsv_param 함수에서 리턴받은 hsv 파라미터의 값을 사용하게 됨.
+    '''
+    # hsv 파라미터
+    hsv_min, hsv_max = (105, 125, 194), (179, 255, 255) # hsv_params
+    # 여기서 hsv 값을 직접 주고 싶으면 (105, 125, 194), (179, 255, 255) 이런 식으로 하면 됨
+
+    output_dir = os.path.join(yaml_config.output_root, output_dir)
+
+    # extract_displacement.py 실행
+    extract_displacement_conmmand = (
+    f"python ./example/extract_displacement.py "
+    f"-fname {yaml_config.video_root}/{input_mov_file} "
+    f"-f {yaml_config.fps} -skip {yaml_config.skip} "
+    f"-o {output_dir} "
+    f"-fo {yaml_config.fo} -flb {yaml_config.flb} -fub {yaml_config.fub} -a {yaml_config.a} "
+    f"-roi ./input/0927/0814_30204_B_S/{json_file} "
+    f"-hsvmin {hsv_min[0]} {hsv_min[1]} {hsv_min[2]} "
+    f"-hsvmax {hsv_max[0]} {hsv_max[1]} {hsv_max[2]}"
+    )
+
+    os.system(extract_displacement_conmmand)
+
+
+def process_video_and_extract_displacement():
+    '''
+    hsv 값 구하기와 변위 추출을 한번에 수행할 수 있는 함수
+    '''
+    # 변위를 추출할 동영상 파일과 해당 영상의 정보가 담긴 json 파일, output 디렉토리 이름 명시
+    # 동영상 파일 이름, json 파일 이름, output 디렉토리 이름 등의 형식은 지켜져야 함
+    input_mov_file = f"{target_config['date']}_{target_config['bearing_type']}_{target_config['fault_type']}_{target_config['axis']}.mov"
+    json_file = f"{target_config['date']}_{target_config['bearing_type']}_{target_config['fault_type']}_{target_config['axis']}.json"
+    output_dir = f"{target_config['date']}/{target_config['date']}_{target_config['bearing_type']}_{target_config['fault_type']}_{target_config['axis']}"
+
+    print('input_mov_file is: ', input_mov_file)
+
+    # hsv 파라미터 추출
+    hsv_params = get_hsv_param(input_mov_file)
+
+    # .py 코드 실행
+    get_roi(input_mov_file, json_file)
+    extract_displacement(input_mov_file, json_file, output_dir, hsv_params)
+
+
+if __name__=="__main__":
+
+    ########################
+    # 주로 수정해야 할 부분
+    target_config = {
+        'date': '0814',
+        'bearing_type': '30204',
+        'fault_type': 'B',
+        'axis': 'S'
+    }
+    ########################
+    yaml_config = load_yaml('./process_and_extract_config.yaml')
+
+    process_video_and_extract_displacement()
+
