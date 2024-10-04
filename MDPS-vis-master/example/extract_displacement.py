@@ -26,9 +26,9 @@ def extract_displacement(
     loop_range = filter_order + 1
 
     # 확장자 앞에 _Start 추가
-    parts = filename.rsplit('.mov', 1)
+    parts = filename.rsplit('.mp4', 1)
     axis = parts[0][-1]
-    filename_with_start = parts[0] + '_Start.mov'
+    filename_with_start = parts[0] + '_Start.mp4'
     mean_qx, mean_qy = find_center(filename_with_start, video_sampling_rate, frame_skip_rate, roi_file, tuple(hsv_min), tuple(hsv_max))
 
     stream = VideoFileReader(filename, video_sampling_rate, False, frame_skip_rate)

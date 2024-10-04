@@ -35,7 +35,7 @@ def get_hsv_param(input_mov_file: str):
     return list(hsv_min), list(hsv_max)
 
 
-def get_roi(input_mov_file: str, json_file: str):
+def get_roi(input_mov_file: str, json_file: str, input_dir: str):
     '''
     get_roi.py 실행
     '''
@@ -43,13 +43,13 @@ def get_roi(input_mov_file: str, json_file: str):
     f"python ./example/get_roi.py "
     f"-fname {yaml_config.video_root}/{input_mov_file} "
     f"-f {yaml_config.fps} "
-    f"-o ./input/1001/1001_30204_IR_F/{json_file}"
+    f"-o ./input/{input_dir}/{json_file}"
     )
 
     os.system(get_roi_command)
 
 
-def extract_displacement(input_mov_file: str, json_file: str, output_dir: str, hsv_params: tuple):
+def extract_displacement(input_mov_file: str, json_file: str, output_dir: str, input_dir:str, hsv_params: tuple):
     '''
     extract_displacement.py 실행
     이 과정에서 쓰인 hsv 값은 get_hsv_param 함수에서 리턴받은 hsv 파라미터의 값을 사용하게 됨.
@@ -67,7 +67,7 @@ def extract_displacement(input_mov_file: str, json_file: str, output_dir: str, h
     f"-f {yaml_config.fps} -skip {yaml_config.skip} "
     f"-o {output_dir} "
     f"-fo {yaml_config.fo} -flb {yaml_config.flb} -fub {yaml_config.fub} -a {yaml_config.a} "
-    f"-roi ./input/1001/1001_30204_IR_F/{json_file} "
+    f"-roi ./input/{input_dir}/{json_file} "
     f"-hsvmin {hsv_min[0]} {hsv_min[1]} {hsv_min[2]} "
     f"-hsvmax {hsv_max[0]} {hsv_max[1]} {hsv_max[2]}"
     )
@@ -81,7 +81,10 @@ def process_video_and_extract_displacement():
     '''
     # 변위를 추출할 동영상 파일과 해당 영상의 정보가 담긴 json 파일, output 디렉토리 이름 명시
     # 동영상 파일 이름, json 파일 이름, output 디렉토리 이름 등의 형식은 지켜져야 함
-    input_mov_file = f"{target_config['date']}_{target_config['bearing_type']}_{target_config['fault_type']}_{target_config['axis']}.mp4"
+    input_data = f"{target_config['date']}_{target_config['bearing_type']}_{target_config['fault_type']}_{target_config['axis']}"
+    input_dir = os.path.join(f"{target_config['date']}/{input_data}")
+
+    input_mov_file = os.path.join(input_dir, f"{input_data}.mp4")
     json_file = f"{target_config['date']}_{target_config['bearing_type']}_{target_config['fault_type']}_{target_config['axis']}.json"
     output_dir = f"{target_config['date']}/{target_config['date']}_{target_config['bearing_type']}_{target_config['fault_type']}_{target_config['axis']}"
 
@@ -91,8 +94,8 @@ def process_video_and_extract_displacement():
     hsv_params = get_hsv_param(input_mov_file)
 
     # .py 코드 실행
-    get_roi(input_mov_file, json_file)
-    extract_displacement(input_mov_file, json_file, output_dir, hsv_params)
+    get_roi(input_mov_file, json_file, input_dir)
+    extract_displacement(input_mov_file, json_file, output_dir, input_dir, hsv_params)
 
 
 if __name__=="__main__":
@@ -102,8 +105,8 @@ if __name__=="__main__":
     target_config = {
         'date': '1001',
         'bearing_type': '30204',
-        'fault_type': 'IR',
-        'axis': 'F'
+        'fault_type': 'OR',
+        'axis': 'S'
     }
     ########################
     yaml_config = load_yaml('./process_and_extract_config.yaml')

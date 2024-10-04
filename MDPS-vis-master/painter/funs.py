@@ -147,7 +147,10 @@ def draw_data(data: list, csv_file: str, column: str, axis: str):
         df.loc[df[column].abs() > 10 * median_value, column] = np.nan
 
         # 시간 축으로 나누고, 변위 데이터는 단위 변환하여 그리기
-        plt.plot(df.index / 120, df[column] * 0.0722222, label=fault_type, alpha=0.7)
+        if(axis == 'F'):
+            plt.plot(df.index / 120, df[column] * 0.074627, label=fault_type, alpha=0.7)
+        if(axis == 'S'):
+            plt.plot(df.index / 120, df[column] * 0.111111, label=fault_type, alpha=0.7)
 
         bearing_type = subdir[5:10]
 
