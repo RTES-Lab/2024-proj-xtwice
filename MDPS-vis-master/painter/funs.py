@@ -204,5 +204,26 @@ def check_param(target_view: str = None, target_fault_type: str = None):
     if target_fault_type and target_fault_type not in valid_fault_type:
         raise ValueError(f'target_fault_type must be one of the {valid_fault_type}. You entered {target_fault_type}')
 
+def compare_graphs(dir_list: List, target_csv_list: Optional[List]=None):
+    for directory in sorted(dir_list):    
+        axis = directory[-1]
+        csv_file_list = config.axis_to_csv_dic[axis]
+        
+        if target_csv_list:
+            filtered_csv_file_list = []
 
+            # csv_file_list에 있는 파일들 중에서 target_csv_list에 포함된 파일만 필터링
+            for csv_file in csv_file_list:
+                if csv_file in target_csv_list: # csv_file이 target_csv_list에 있으면
+                    filtered_csv_file_list.append(csv_file) # 해당 파일을 filtered_csv_file_list에 추가
+            csv_file_list = filtered_csv_file_list
+        
+        if not len(csv_file_list):
+            raise ValueError(f'The CSV file that meets your criteria does not exist. No graph will be generated.')
+
+        for csv_file in csv_file_list:
+            data = get_data(directory, csv_file, config.axis_to_marker_dic[axis])
+            print(data)
+            for column in config.axis_to_marker_dic[axis]:
+                draw_data(data=data, csv_file=csv_file, column=column, axis=axis)
 
