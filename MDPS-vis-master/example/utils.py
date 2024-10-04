@@ -225,3 +225,7 @@ def load_yaml(config_yaml_file: str):
         config_yaml = yaml.load(f, Loader=yaml.FullLoader)
         config = Box(config_yaml)
     return config
+
+def moving_average(a,n):
+    N=len(a)
+    return np.array([np.mean(a[i:i+n]) for i in np.arange(0,N-n+1)])
