@@ -3,6 +3,13 @@
 변위를 추출하고자 하는 영상의 날짜, 결함 종류, axis 등을 제대로 입력해야
 원하는 결과를 얻을 수 있음에 유의
 '''
+
+import sys
+
+if sys.platform == 'win32':
+    import os
+    os.environ['PYTHONUTF8'] = '1'
+
 import os
 from utils import *
 
@@ -36,7 +43,7 @@ def get_roi(input_mov_file: str, json_file: str):
     f"python ./example/get_roi.py "
     f"-fname {yaml_config.video_root}/{input_mov_file} "
     f"-f {yaml_config.fps} "
-    f"-o ./test/{json_file}"
+    f"-o ./input/1001/1001_30204_IR_F/{json_file}"
     )
 
     os.system(get_roi_command)
@@ -48,7 +55,8 @@ def extract_displacement(input_mov_file: str, json_file: str, output_dir: str, h
     이 과정에서 쓰인 hsv 값은 get_hsv_param 함수에서 리턴받은 hsv 파라미터의 값을 사용하게 됨.
     '''
     # hsv 파라미터
-    hsv_min, hsv_max = hsv_params
+    hsv_min, hsv_max = hsv_params # hsv_params
+    # 여기서 hsv 값을 직접 주고 싶으면 (105, 125, 194), (179, 255, 255) 이런 식으로 하면 됨
 
     output_dir = os.path.join(yaml_config.output_root, output_dir)
 
@@ -59,7 +67,7 @@ def extract_displacement(input_mov_file: str, json_file: str, output_dir: str, h
     f"-f {yaml_config.fps} -skip {yaml_config.skip} "
     f"-o {output_dir} "
     f"-fo {yaml_config.fo} -flb {yaml_config.flb} -fub {yaml_config.fub} -a {yaml_config.a} "
-    f"-roi ./test/{json_file} "
+    f"-roi ./input/1001/1001_30204_IR_F/{json_file} "
     f"-hsvmin {hsv_min[0]} {hsv_min[1]} {hsv_min[2]} "
     f"-hsvmax {hsv_max[0]} {hsv_max[1]} {hsv_max[2]}"
     )
@@ -73,7 +81,7 @@ def process_video_and_extract_displacement():
     '''
     # 변위를 추출할 동영상 파일과 해당 영상의 정보가 담긴 json 파일, output 디렉토리 이름 명시
     # 동영상 파일 이름, json 파일 이름, output 디렉토리 이름 등의 형식은 지켜져야 함
-    input_mov_file = f"{target_config['date']}_{target_config['bearing_type']}_{target_config['fault_type']}_{target_config['axis']}.mov"
+    input_mov_file = f"{target_config['date']}_{target_config['bearing_type']}_{target_config['fault_type']}_{target_config['axis']}.mp4"
     json_file = f"{target_config['date']}_{target_config['bearing_type']}_{target_config['fault_type']}_{target_config['axis']}.json"
     output_dir = f"{target_config['date']}/{target_config['date']}_{target_config['bearing_type']}_{target_config['fault_type']}_{target_config['axis']}"
 
@@ -92,10 +100,10 @@ if __name__=="__main__":
     ########################
     # 주로 수정해야 할 부분
     target_config = {
-        'date': '0828',
+        'date': '1001',
         'bearing_type': '30204',
-        'fault_type': 'H',
-        'axis': 'T'
+        'fault_type': 'IR',
+        'axis': 'F'
     }
     ########################
     yaml_config = load_yaml('./process_and_extract_config.yaml')

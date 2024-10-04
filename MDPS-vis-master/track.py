@@ -147,16 +147,16 @@ class MarkerTracker(ROIBase):
 
         if not isinstance(lb, (list, tuple)):
             print("lb argument must be list or tuple, default value is set")
-            lb = (0,0,0)
+            lb = np.array((0,0,0))
         elif len(lb) != 3:
             print("Length of lb argument must be 3, default value is set")
-            lb = (0,0,0)
+            lb = np.array((0,0,0))
         if not isinstance(ub, (list, tuple)):
             print("ub argument must be list or tuple, default value is set")
-            ub = (0,0,0)
+            ub = np.array((0,0,0))
         elif len(ub) != 3:
             print("Length of ub argument must be 3, default value is set")
-            ub = (0,0,0)
+            ub = np.array((0,0,0))
         
         self.lb = lb
         self.ub = ub
@@ -165,9 +165,10 @@ class MarkerTracker(ROIBase):
 
     def binarize(self, frame):
         frame_roi = self.extract_roi(frame)
+
         frame_roi = cv2.GaussianBlur(frame_roi, self.gaussian_kernel_size, 0)
         frame_roi = cv2.cvtColor(frame_roi, cv2.COLOR_BGR2HSV)
-        mask = cv2.inRange(frame_roi, self.lb, self.ub)
+        mask = cv2.inRange(frame_roi, np.array(self.lb), np.array(self.ub))
 
         return mask
 

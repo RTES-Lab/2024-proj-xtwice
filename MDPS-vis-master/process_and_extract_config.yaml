@@ -1,4 +1,4 @@
-video_root: './videos'
+video_root: './input/1001/1001_30204_IR_F'
 output_root: './output'
 
 rpm: 1200
@@ -23,7 +23,7 @@ axis_to_csv_dic:
 axis_to_marker_dic:
   'F' : ['A', 'B']
   'S' : ['A', 'B']
-  'T' : ['A', 'B', 'C', 'D', 'E']
+  'T' : ['A', 'B']
 
 
 # 변위 추출 파라미터

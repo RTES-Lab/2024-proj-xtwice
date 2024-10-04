@@ -15,7 +15,7 @@ def load_yaml(config_yaml_file: str):
     config : Box
         YAML 파일의 내용을 포함한 Box 객체
     """
-    with open(config_yaml_file, 'r', encoding='utf-8') as f:
+    with open(config_yaml_file, 'r', encoding='UTF-8') as f:
         config_yaml = yaml.load(f, Loader=yaml.FullLoader)
         config = Box(config_yaml)
     return config
