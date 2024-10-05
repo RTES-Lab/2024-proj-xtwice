@@ -103,10 +103,10 @@ if __name__=="__main__":
     ########################
     # 주로 수정해야 할 부분
     target_config = {
-        'date': '1001',
+        'date': '1004',
         'bearing_type': '30204',
-        'fault_type': 'OR',
-        'axis': 'S'
+        'fault_type': 'H',
+        'axis': 'F'
     }
     ########################
     yaml_config = load_yaml('./process_and_extract_config.yaml')
