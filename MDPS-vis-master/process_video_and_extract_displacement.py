@@ -105,9 +105,9 @@ if __name__=="__main__":
     target_config = {
         'date': '1008',
         'bearing_type': '30204',
-        'RPM': '1200',
-        'fault_type': 'H',
-        'axis': 'S'
+        'RPM': '600',
+        'fault_type': 'OR',
+        'axis': 'F'
     }
     ########################
     yaml_config = load_yaml('./process_and_extract_config.yaml')
