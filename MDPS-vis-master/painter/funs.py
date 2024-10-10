@@ -134,28 +134,37 @@ def draw_data(data: list, csv_file: str, column: str, axis: str):
     plt.figure(figsize=(15, 6))
 
     # 데이터 길이를 맞추기 위한 최소 길이
-    min_len = min(len(df) for _, df in data)
+    #min_len = min(len(df) for _, df in data)
+    x_len = 240 * 175
 
     for subdir, df in data:
         subdir = os.path.basename(os.path.dirname(subdir))
         # 베어링 타입 추출 ('OR', 'H', 'IR', 'B')
         fault_type = next((x for x in ['OR', 'H', 'IR', 'B'] if x in subdir), subdir)
-        df = df[:min_len].copy()
+        df = df[:x_len].copy()
 
         # 중앙값 기준으로 10배가 넘는 값은 NaN으로 처리
         median_value = df[column].abs().median()
         df.loc[df[column].abs() > 10 * median_value, column] = np.nan
 
         # 시간 축으로 나누고, 변위 데이터는 단위 변환하여 그리기
+        # view 별로 marker size에 따른 다르게 그리는 법을 여기서 작성해야 함!
+
+        # 1001: Side view - 0.111111mm/px, Front view - 0.074627mm/px
+        # 1008: Side view - 8mm / 45px = 0.177777778mm/px, Front view - 5mm / 66px = 0.075757576mm/px
+        
         if(axis == 'F'):
-            plt.plot(df.index / 120, df[column] * 0.074627, label=fault_type, alpha=0.7)
+            plt.plot(df.index / 240, df[column] * 0.075758, label=fault_type, alpha=0.7)
         if(axis == 'S'):
-            plt.plot(df.index / 120, df[column] * 0.111111, label=fault_type, alpha=0.7)
-
-        bearing_type = subdir[5:10]
-
+            plt.plot(df.index / 240, df[column] * 0.177778, label=fault_type, alpha=0.7)
+        # if(axis == 'T'):
+        #     plt.plot(df.index / 120, df[column] * 0.0722222, label=fault_type, alpha=0.7)
+        
+        parts = subdir.split('_')
+        bearing_type = parts[1]
+        RPM = parts[2]
     
-    description = f'{bearing_type} {fault_type}, {view_mapping[axis]} view, {csv_file[:1]} axis, marker {column}'
+    description = f'{bearing_type} {fault_type}, {RPM} RPM, {view_mapping[axis]} view, {csv_file[:1]} axis, marker {column}'
     
     plt.title(description, size=15)
     plt.xlabel('Time [s]', size=15)

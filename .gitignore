@@ -1,1 +1,5 @@
 *.avi
+output
+input
+*__pycache__
+*.pyc
