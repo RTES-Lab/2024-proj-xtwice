@@ -56,7 +56,10 @@ def drift_correction(df, folder_list):
     return corrected_df
 
 
-def get_dir_list(target_dir: str, target_view: Optional[str] = None, target_fault_type: Optional[str] = None):
+def get_dir_list(
+        target_dir: str, 
+        target_rpm: Optional[str] = None, target_fault_type: Optional[str] = None, target_view: Optional[str] = None, 
+        ):
     '''
     주어진 조건에 맞는 디렉토리 리스트를 반환하는 함수
     
@@ -64,11 +67,14 @@ def get_dir_list(target_dir: str, target_view: Optional[str] = None, target_faul
     ----------
     target_dir: str
         검색할 상위 디렉토리 경로.
+    target_rpm: str, optional
+        디렉토리 이름에 포함될 rpm 유형 정보. '1200', '600'을 입력할 수 있다. 기본값은 None.
+    target_fault_type: str, optional
+        디렉토리 이름에 포함될 결함 유형 정보. 'H', 'B', 'IR', 'OR'을 입력할 수 있다. 기본값은 None.
     target_view: str, optional
         디렉토리 이름에 포함될 뷰 정보. 'F', 'S', 'T'를 입력할 수 있으며,
         각각은 Front view, Side view, Top view를 나타낸다. 기본값은 None.
-    target_fault_type: str, optional
-        디렉토리 이름에 포함될 결함 유형 정보. 'H', 'B', 'IR', 'OR'을 입력할 수 있다. 기본값은 None.
+    
 
     Returns
     ----------
@@ -87,11 +93,12 @@ def get_dir_list(target_dir: str, target_view: Optional[str] = None, target_faul
     # 정상적인 값이 들어왔는지 체크
     check_param(target_view=target_view, target_fault_type=target_fault_type)
 
+    if target_rpm:
+        pattern += f'{target_rpm}*'
     if target_fault_type:
         pattern += f'{target_fault_type}*'
     if target_view:
         pattern += f'{target_view}'
-
     dir_list = glob.glob(pattern)
 
     if not dir_list:
