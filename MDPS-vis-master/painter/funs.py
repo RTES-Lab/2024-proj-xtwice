@@ -136,17 +136,23 @@ def draw_data(data: list, csv_file: str, column: str, axis: str):
         'T': 'Top'
     }
 
+    conversion_factors = {
+    '1001': {'F': 0.074627, 'S': 0.111111},
+    '1008': {'F': 0.075757576, 'S': 0.177777778},
+    '1011': {'F': 0.075757576},
+    '1012': {'F': 0.046296296}
+    }
+
     plt.figure(figsize=(15, 6))
 
     # 데이터 길이를 맞추기 위한 최소 길이
-    #min_len = min(len(df) for _, df in data)
-    x_len = 240 * 175
+    min_len = min(len(df) for _, df in data)
 
     for subdir, df in data:
         subdir = os.path.basename(os.path.dirname(subdir))
         # 베어링 타입 추출 ('OR', 'H', 'IR', 'B')
         fault_type = next((x for x in ['OR', 'H', 'IR', 'B'] if x in subdir), subdir)
-        df = df[:x_len].copy()
+        df = df[:min_len].copy()
 
         # 중앙값 기준으로 10배가 넘는 값은 NaN으로 처리(여기서 Outlier에 대한 처리를 할 수 있을 듯?)
         median_value = df[column].abs().median()
@@ -155,17 +161,17 @@ def draw_data(data: list, csv_file: str, column: str, axis: str):
         # 시간 축으로 나누고, 변위 데이터는 단위 변환하여 그리기
         # view 별로 marker size에 따른 다르게 그리는 법을 여기서 작성해야 함!
 
-        # 1001: Side view - 0.111111mm/px, Front view - 0.074627mm/px
-        # 1008: Side view - 8mm / 45px = 0.177777778mm/px, Front view - 5mm / 66px = 0.075757576mm/px
-        
-        if(axis == 'F'):
-            plt.plot(df.index / 240, df[column] * 0.075758, label=fault_type, alpha=0.7)
-        if(axis == 'S'):
-            plt.plot(df.index / 240, df[column] * 0.177778, label=fault_type, alpha=0.7)
-        # if(axis == 'T'):
-        #     plt.plot(df.index / 120, df[column] * 0.0722222, label=fault_type, alpha=0.7)
-        
+        # 폴더명에서 date와 axis 추출
         parts = subdir.split('_')
+        date = parts[0]
+        axis = parts[-1]
+
+        # 변환 값 가져오기
+        conversion_factor = conversion_factors.get(date, {}).get(axis, 1)
+        
+        # 시간 축으로 나누고, 변위 데이터는 단위 변환하여 그리기
+        plt.plot(df.index / 240, df[column] * conversion_factor, label=fault_type, alpha=0.7)
+        
         bearing_type = parts[1]
         RPM = parts[2]
     

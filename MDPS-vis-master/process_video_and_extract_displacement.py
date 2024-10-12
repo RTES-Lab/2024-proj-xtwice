@@ -103,10 +103,10 @@ if __name__=="__main__":
     ########################
     # 주로 수정해야 할 부분
     target_config = {
-        'date': '1008',
-        'bearing_type': '30204',
+        'date': '1011',
+        'bearing_type': '6204',
         'RPM': '600',
-        'fault_type': 'OR',
+        'fault_type': 'IR',
         'axis': 'F'
     }
     ########################
