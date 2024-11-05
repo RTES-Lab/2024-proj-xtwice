@@ -6,6 +6,10 @@
 import cv2
 import numpy as np
 
+from utils import *
+
+config = load_yaml('./process_and_extract_config.yaml')
+
 def nothing(x):
     pass
 
@@ -48,10 +52,8 @@ def get_first_frame(video_path: str):
     
     return frame
 
-def main():
-    video_path = "./input/0530_30204_OR_1200RPM_120fps_1.mov"  # 동영상 파일 경로 입력
-    first_frame = get_first_frame(video_path)
-    
+def get_hsv(first_frame):
+
     if first_frame is None:
         return
     
@@ -99,12 +101,28 @@ def main():
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-    # 프로그램 종료 시 트랙바 값 출력
-    print(f"{video_path}'s HSV parameters are:")
-    print(f'H Min: {h_min}, S Min: {s_min}, V Min: {v_min}')
-    print(f'H Max: {h_max}, S Max: {s_max}, V Max: {v_max}')
 
     cv2.destroyAllWindows()
+
+    hsv_min = (h_min, s_min, v_min)
+    hsv_max = (h_max, s_max, v_max)
+
+    return (hsv_min, hsv_max)
+
+
+def main():
+    video_root = config.video_root
+    input_mov_file = f"{config.date}_{config.bearing_type}_{config.fault_type}_{config.axis}.mov"
+
+    input_video = f'{video_root}/{input_mov_file}'
+    first_frame = get_first_frame(input_video)
+    hsv_min, hsv_max  = get_hsv(first_frame)
+    
+    # 프로그램 종료 시 트랙바 값 출력
+    print(f"{input_video}'s HSV parameters are:")
+    print(f'H Min: {hsv_min[0]}, S Min: {hsv_min[1]}, V Min: {hsv_min[2]}')
+    print(f'H Max: {hsv_max[0]}, S Max: {hsv_max[1]}, V Max: {hsv_max[2]}')
+    
 
 if __name__ == "__main__":
     main()

@@ -11,6 +11,8 @@ from track import *
 from pbm import *
 
 import json
+import yaml
+from box import Box
 
 M_PI = math.pi
 
@@ -58,7 +60,7 @@ def get_coordinates(img):
     cv2.setMouseCallback('Image', get_mouse_click)
 
     # 40 -> 100 -> 120 -> 140 변경
-    cv2.createTrackbar("ROI Size (px)", "Image", 5, 200, dummy_callback)
+    cv2.createTrackbar("ROI Size (px)", "Image", 5, 300, dummy_callback)
 
     while True:
         roi_size = cv2.getTrackbarPos("ROI Size (px)", "Image")
@@ -86,7 +88,7 @@ def get_coordinates(img):
     return ret, roi_size
 
 
-def find_center(filename, video_sampling_rate, frame_skip_rate, roi_file):
+def find_center(filename, video_sampling_rate, frame_skip_rate, roi_file, lb, ub):
     stream = VideoFileReader(filename, video_sampling_rate, False, frame_skip_rate)
     img = stream.read()
     idx_crop, idx_pbm, coord = region_from_json(roi_file)
@@ -97,7 +99,7 @@ def find_center(filename, video_sampling_rate, frame_skip_rate, roi_file):
         img_pbm = crop_roi(img_crop, idx_pbm)
         x = stream.transform(img_pbm)[:,:,0]
 
-    tracker = MarkerCentroidTracker((105, 94, 91), (128, 255, 255))
+    tracker = MarkerCentroidTracker(lb, ub)
     tracker.roi = Location(x=0, y=0, w=img_crop.shape[1], h=img_crop.shape[0])
     tracker.track_region = coord
     qx = []
@@ -204,3 +206,27 @@ def region_from_json(filename):
         coord.append(Location.from_list(item))
     
     return idx_crop, idx_pbm, coord
+
+def load_yaml(config_yaml_file: str):
+    """
+    YAML 파일을 읽어와 Box 객체로 변환하는 함수.
+
+    Parameters
+    ----------
+    config_yaml_file : str
+        읽을 YAML 파일의 경로.
+
+    Returns
+    ----------
+    config : Box
+        YAML 파일의 내용을 포함한 Box 객체
+    """
+    with open(config_yaml_file) as f:
+        config_yaml = yaml.load(f, Loader=yaml.FullLoader)
+        config = Box(config_yaml)
+    return config
+
+## 예비
+def moving_average(a,n):
+    N=len(a)
+    return np.array([np.mean(a[i:i+n]) for i in np.arange(0,N-n+1)])

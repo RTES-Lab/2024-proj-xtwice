@@ -1,0 +1,37 @@
+video_root: './input'
+output_root: './output'
+
+rpm: 1200
+fps: 240
+
+fault_type_list:
+  - 'H'
+  - 'IR'
+  - 'OR'
+  - 'B'
+  - 'M'
+  - 'U'
+  - 'L'
+
+axis_list:
+  - 'F'
+  - 'S'
+  - 'T'
+
+axis_to_csv_dic:
+  'F': ['x.csv', 'z.csv', 'r.csv']
+  'S': ['y.csv', 'z.csv', 'r.csv']
+  'T': ['x.csv', 'y.csv', 'r.csv']
+
+axis_to_marker_dic:
+  'F' : ['A', 'B']
+  'S' : ['A', 'B']
+  'T' : ['A', 'B']
+
+
+# 변위 추출 파라미터
+skip: 0
+fo: 14
+flb: 0.01
+fub: 1.0
+a: 0
