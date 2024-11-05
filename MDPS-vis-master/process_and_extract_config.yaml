@@ -9,6 +9,9 @@ fault_type_list:
   - 'IR'
   - 'OR'
   - 'B'
+  - 'M'
+  - 'U'
+  - 'L'
 
 axis_list:
   - 'F'
@@ -16,9 +19,9 @@ axis_list:
   - 'T'
 
 axis_to_csv_dic:
-  'F': ['x.csv', 'z.csv']
-  'S': ['y.csv', 'z.csv']
-  'T': ['x.csv', 'y.csv']
+  'F': ['x.csv', 'z.csv', 'r.csv']
+  'S': ['y.csv', 'z.csv', 'r.csv']
+  'T': ['x.csv', 'y.csv', 'r.csv']
 
 axis_to_marker_dic:
   'F' : ['A', 'B']

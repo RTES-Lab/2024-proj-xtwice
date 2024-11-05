@@ -118,12 +118,12 @@ def get_data(folder_list: list, csv_file: str, columns: list) -> List[Tuple[str,
 
 
     # 즉 변위 추출 자체는 start가 빼진 csv인데, 거기서 한 번 더 전처리가 여기서 진행됨!
-    means = df.mean()
-    df_centered = df - means
-    corrected_df = drift_correction(df_centered, folder_list)
+    #means = df.mean()
+    #df_centered = df - means
+    #corrected_df = drift_correction(df_centered, folder_list)
 
 
-    data.append((file_path, corrected_df))
+    data.append((file_path, df))
             
     return data
 
@@ -147,7 +147,13 @@ def draw_data(data: list, csv_file: str, column: str, axis: str):
     '1001': {'F': 0.074627, 'S': 0.111111},
     '1008': {'F': 0.075757576, 'S': 0.177777778},
     '1011': {'F': 0.075757576},
-    '1012': {'F': 0.046296296}
+    '1012': {'F': 0.046296296},
+    '1024': {'F': 0.044642857, 'S': 0.075471698},
+    '1029': {'F': 0.044642857, 'S': 0.075471698},
+    '1102': {'F': {'A': 0.0485, 'B': 0.0485}, 'S': {'A': 0.069565217, 'B': 0.066666667}},
+    '1103': {'F': {'A': 0.0485, 'B': 0.0485}},
+    '1104': {'F': {'A': 0.05, 'B': 0.05}, 'S': {'A': 0.067796610, 'B': 0.065040650}},
+    '1105': {'F': {'H': 0.0479, 'IR': 0.05, 'OR': 0.05, 'B': 0.05}}
     }
 
     plt.figure(figsize=(15, 6))
@@ -159,7 +165,7 @@ def draw_data(data: list, csv_file: str, column: str, axis: str):
         subdir = os.path.basename(os.path.dirname(subdir))
         # 베어링 타입 추출 ('OR', 'H', 'IR', 'B')
         fault_type = next((x for x in ['OR', 'H', 'IR', 'B'] if x in subdir), subdir)
-        df = df[:min_len].copy()
+        df = df[:2048].copy()
 
         # 중앙값 기준으로 10배가 넘는 값은 NaN으로 처리(여기서 Outlier에 대한 처리를 할 수 있을 듯?)
         median_value = df[column].abs().median()
@@ -174,10 +180,16 @@ def draw_data(data: list, csv_file: str, column: str, axis: str):
         axis = parts[-1]
 
         # 변환 값 가져오기
-        conversion_factor = conversion_factors.get(date, {}).get(axis, 1)
+        if int(date) < 1100:
+            conversion_factor = conversion_factors.get(date, {}).get(axis, 1)
+        elif int(date) == 1105:
+            conversion_factor = conversion_factors.get(date, {}).get(axis, 1).get(fault_type, 1)
+        else:
+            conversion_factor = conversion_factors.get(date, {}).get(axis, 1).get(column, 1)
         
         # 시간 축으로 나누고, 변위 데이터는 단위 변환하여 그리기
         plt.plot(df.index / 240, df[column] * conversion_factor, label=fault_type, alpha=0.7)
+        #plt.ylim(-0.06, 0.06)
         
         bearing_type = parts[1]
         RPM = parts[2]

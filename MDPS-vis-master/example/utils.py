@@ -60,7 +60,7 @@ def get_coordinates(img):
     cv2.setMouseCallback('Image', get_mouse_click)
 
     # 40 -> 100 -> 120 -> 140 변경
-    cv2.createTrackbar("ROI Size (px)", "Image", 5, 200, dummy_callback)
+    cv2.createTrackbar("ROI Size (px)", "Image", 5, 300, dummy_callback)
 
     while True:
         roi_size = cv2.getTrackbarPos("ROI Size (px)", "Image")
