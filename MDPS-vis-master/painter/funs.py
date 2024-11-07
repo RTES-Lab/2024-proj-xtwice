@@ -127,7 +127,7 @@ def get_data(folder_list: list, csv_file: str, columns: list) -> List[Tuple[str,
             
     return data
 
-def draw_data(data: list, csv_file: str, column: str, axis: str):
+def draw_data(data: list, csv_file: str, column: str, axis: str, length: int=None):
     """
     데이터를 그래프로 그리는 함수.
     data: 각 디렉토리별 파일과 데이터가 들어있는 리스트
@@ -143,29 +143,21 @@ def draw_data(data: list, csv_file: str, column: str, axis: str):
         'T': 'Top'
     }
 
-    conversion_factors = {
-    '1001': {'F': 0.074627, 'S': 0.111111},
-    '1008': {'F': 0.075757576, 'S': 0.177777778},
-    '1011': {'F': 0.075757576},
-    '1012': {'F': 0.046296296},
-    '1024': {'F': 0.044642857, 'S': 0.075471698},
-    '1029': {'F': 0.044642857, 'S': 0.075471698},
-    '1102': {'F': {'A': 0.0485, 'B': 0.0485}, 'S': {'A': 0.069565217, 'B': 0.066666667}},
-    '1103': {'F': {'A': 0.0485, 'B': 0.0485}},
-    '1104': {'F': {'A': 0.05, 'B': 0.05}, 'S': {'A': 0.067796610, 'B': 0.065040650}},
-    '1105': {'F': {'H': 0.0479, 'IR': 0.05, 'OR': 0.05, 'B': 0.05}}
-    }
+    conversion_factors = config.conversion_factors
 
     plt.figure(figsize=(15, 6))
 
     # 데이터 길이를 맞추기 위한 최소 길이
-    min_len = min(len(df) for _, df in data)
+    if not length:
+        min_len = min(len(df) for _, df in data)
+    else:
+        min_len = length
 
     for subdir, df in data:
         subdir = os.path.basename(os.path.dirname(subdir))
         # 베어링 타입 추출 ('OR', 'H', 'IR', 'B')
         fault_type = next((x for x in ['OR', 'H', 'IR', 'B'] if x in subdir), subdir)
-        df = df[:2048].copy()
+        df = df[:min_len].copy()
 
         # 중앙값 기준으로 10배가 넘는 값은 NaN으로 처리(여기서 Outlier에 대한 처리를 할 수 있을 듯?)
         median_value = df[column].abs().median()
@@ -196,16 +188,18 @@ def draw_data(data: list, csv_file: str, column: str, axis: str):
     
     description = f'{bearing_type} {fault_type}, {RPM} RPM, {view_mapping[axis]} view, {csv_file[:1]} axis, marker {column}'
     
-    plt.title(description, size=15)
-    plt.xlabel('Time [s]', size=15)
-    plt.ylabel('Displacement [mm]', size=15)
+    plt.title(description, size=30)
+    plt.xlabel('Time [s]', size=30)
+    plt.ylabel('Displacement [mm]', size=30)
+    plt.xticks(fontsize=30)  # x축 틱 글씨 크기 설정
+    plt.yticks(fontsize=30)  # y축 틱 글씨 크기 설정
     plt.legend()
 
     # 그래프 보여주기
     plt.show()
     plt.close()
 
-def draw_single_graphs(dir_list: List, target_csv_list: Optional[List]=None):
+def draw_single_graphs(dir_list: List, target_csv_list: Optional[List]=None, length: int=None):
     '''
     dir_list에 포함되는 디렉토리들을 순회하며 그래프를 그리는 함수.
     target_csv_list가 None이 아닌 경우, 해당 리스트에 있는 csv파일만 그래프로 그린다. 
@@ -236,7 +230,7 @@ def draw_single_graphs(dir_list: List, target_csv_list: Optional[List]=None):
             ## 여기서 get_data를 진행함 -> 그냥 그대로 가져와야 하는데
             data = get_data(directory, csv_file, config.axis_to_marker_dic[axis])
             for column in config.axis_to_marker_dic[axis]:
-                draw_data(data=data, csv_file=csv_file, column=column, axis=axis)
+                draw_data(data=data, csv_file=csv_file, column=column, axis=axis, length=length)
 
 def check_param(target_view: str = None, target_fault_type: str = None):
     '''
