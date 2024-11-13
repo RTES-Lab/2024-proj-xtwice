@@ -103,14 +103,13 @@ if __name__=="__main__":
     ########################
     # 주로 수정해야 할 부분
     target_config = {
-        'date': '1008',
-        'bearing_type': '30204',
-        'RPM': '600',
-        'fault_type': 'OR',
+        'date': '1105',
+        'bearing_type': '6204',
+        'RPM': '1201',
+        'fault_type': 'H',
         'axis': 'F'
     }
     ########################
     yaml_config = load_yaml('./process_and_extract_config.yaml')
 
     process_video_and_extract_displacement()
-

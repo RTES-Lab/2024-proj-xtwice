@@ -148,11 +148,11 @@ def extract_displacement(filename, roi_file, output_dir, fps, frame_skip_rate, f
     qqx = qx - mean_qx
     qqy = qy - mean_qy
 
+    # 결과 저장
     np.savetxt(f"{output_dir}/{config.axis_to_csv_dic[axis][0]}", qqx, fmt="%.18f", delimiter=",")
     np.savetxt(f"{output_dir}/{config.axis_to_csv_dic[axis][1]}", qqy, fmt="%.18f", delimiter=",")
-
-    # # 동영상은 만들지 않음
-    # return
+    # 동영상은 만들지 않음
+    #return
 
     """ 붉은 원 생성 부분""" # axis = 0 은 열 방향으로 평균을 내라는 뜻
     x0 = np.mean(m_qx[:50, :], axis=0)
