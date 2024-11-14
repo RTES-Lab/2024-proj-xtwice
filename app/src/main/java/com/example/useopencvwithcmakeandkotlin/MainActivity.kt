@@ -6,23 +6,24 @@ import android.provider.MediaStore
 import androidx.appcompat.app.AppCompatActivity
 import com.example.useopencvwithcmakeandkotlin.databinding.ActivityMainBinding
 
+// class 이름: MainActivity, parent: AppCompatActivity()
 class MainActivity : AppCompatActivity() {
 
+    // val: 불변 변수, var: 가변 변수
+    // lateinit은 지연초기화로 kotlin에서 변수를 선언할 때 반드시 초기화를 해주어야 하는데 해당 변수가 언제 초기화될지는 알 수 없지만 ,
+    // 반드시 초기화가 되고 이후에 사용된다는 것이 보장될 경우 lateinit을 사용한다.
+    // private 으로 선언된 변수는 외부에서 직접 접근할 수 없고, 클래스 내부의 다른 멤버 함수에서만 사용가능
     private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+
+        // inflate() : ActivityMainBinding 클래스의 메서드. Activity의 레이아웃 파일을 인플레이션(뷰 객체로 변환) 한다.
+        // layoutInflater : Activity의 레이아웃 인플레이터(Inflater)를 가리키는 객체로,
+        // inflate() 메서드를 통해 Activity의 레이아웃 파일을 인플레이션 할 수 있다.
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        // 카메라 버튼 클릭 리스너 설정
-        binding.cameraButton.setOnClickListener {
-            val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-            if (cameraIntent.resolveActivity(packageManager) != null) {
-                startActivity(cameraIntent)
-            }
-        }
 
         // 갤러리 버튼 클릭 리스너 설정
         binding.galleryButton.setOnClickListener {
@@ -31,12 +32,23 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // 함수 오버라이딩 - override fun
+    // 함수 재정의(Function Overriding)을 하기 위한 키워드
+    // 부모 클래스(MainActivity 클래스의 부모 클래스는 AppCompatActivity 클래스)에 open 키워드로 정의되어 있는 함수를 가져와
+    // 다시 재정의 하는 것(함수 바디를 재정의).
+    // onActivityResult(int requestCode, int resultCode, Intent data)
+    //
+    // int requestCode : subActivity를 호출했던 startActivityForResult()의 두번째 인수값
+    //
+    // int resultCode : 호출된 액티비티에서 설정한 성공(RESULT_OK)/실패(RESULT_CANCEL) 값
+    //
+    // Intent data : 호출된 액티비티에서 저장한 값
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_VIDEO_PICK && resultCode == RESULT_OK) {
             val videoUri = data?.data
             videoUri?.let {
-                val intent = Intent(this, ThumbnailActivity::class.java).apply {
+                val intent = Intent(this, ROIActivity::class.java).apply {
                     putExtra("videoUri", it.toString())
                 }
                 startActivity(intent)
