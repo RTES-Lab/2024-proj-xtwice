@@ -1,5 +1,6 @@
 package com.example.useopencvwithcmakeandkotlin
 
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
@@ -7,16 +8,21 @@ import android.graphics.Paint
 import android.net.Uri
 import android.os.Bundle
 import android.view.MotionEvent
+import android.widget.Button
 import android.widget.ImageView
+import android.widget.SeekBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import org.opencv.android.Utils
+import org.opencv.core.Core
 import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.opencv.core.Scalar
 import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
 import android.media.MediaMetadataRetriever
+import android.os.Parcel
+import android.os.Parcelable
 
 class HSVActivity : AppCompatActivity() {
     companion object {
@@ -30,15 +36,21 @@ class HSVActivity : AppCompatActivity() {
     private var matInput: Mat? = null
     private var roiData: ROIData? = null
     private var originalBitmap: Bitmap? = null
-    private var touchedBitmap: Bitmap? = null
-    private var touchedCanvas: Canvas? = null
-    private val pointPaint = Paint().apply {
-        color = Color.RED  // 빨간색 점
-        style = Paint.Style.FILL
-        strokeWidth = 10f
-    }
-    private var lastTouchX = -1f
-    private var lastTouchY = -1f
+
+    private lateinit var hSeekBarMin: SeekBar
+    private lateinit var hSeekBarMax: SeekBar
+    private lateinit var sMinSeekBar: SeekBar
+    private lateinit var sMaxSeekBar: SeekBar
+    private lateinit var vMinSeekBar: SeekBar
+    private lateinit var vMaxSeekBar: SeekBar
+    private lateinit var confirmButton: Button
+
+    private var hMin = 0
+    private var hMax = 179
+    private var sMin = 0
+    private var sMax = 255
+    private var vMin = 0
+    private var vMax = 255
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,7 +63,9 @@ class HSVActivity : AppCompatActivity() {
         val videoUri = intent.getStringExtra("videoUri")?.let { Uri.parse(it) }
         
         loadAndProcessImage(videoUri)
-        setupTouchListener()
+        initializeSeekBars()
+        setupSeekBarListeners()
+        setupConfirmButton()
     }
 
     private fun loadAndProcessImage(videoUri: Uri?) {
@@ -70,12 +84,9 @@ class HSVActivity : AppCompatActivity() {
                         roi.bottom - roi.top
                     )
                     
-                    touchedBitmap = croppedBitmap.copy(Bitmap.Config.ARGB_8888, true)
-                    touchedCanvas = Canvas(touchedBitmap!!)
-                    
                     matInput = Mat()
                     Utils.bitmapToMat(croppedBitmap, matInput)
-                    imageView.setImageBitmap(touchedBitmap)
+                    imageView.setImageBitmap(croppedBitmap)
                 }
             } finally {
                 retriever.release()
@@ -83,123 +94,171 @@ class HSVActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupTouchListener() {
-        imageView.setOnTouchListener { view, event ->
-            when (event.action) {
-                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
-                    try {
-                        // 이미지뷰 내에서의 실제 이미지 위치와 크기를 계산
-                        val imageView = view as ImageView
-                        val drawable = imageView.drawable
-                        if (drawable == null) return@setOnTouchListener false
-                        
-                        // 이미지뷰의 실제 크기
-                        val imageViewWidth = imageView.width - imageView.paddingLeft - imageView.paddingRight
-                        val imageViewHeight = imageView.height - imageView.paddingTop - imageView.paddingBottom
-                        
-                        // 실제 이미지의 크기
-                        val imageWidth = drawable.intrinsicWidth
-                        val imageHeight = drawable.intrinsicHeight
-                        
-                        // 이미지가 이미지뷰에서 실제로 그려지는 크기와 위치를 계산
-                        val scale: Float
-                        var offsetX = imageView.paddingLeft.toFloat()
-                        var offsetY = imageView.paddingTop.toFloat()
-                        
-                        if (imageWidth * imageViewHeight > imageViewWidth * imageHeight) {
-                            // 이미지가 가로로 더 길 경우
-                            scale = imageViewWidth.toFloat() / imageWidth.toFloat()
-                            offsetY += (imageViewHeight - imageHeight * scale) / 2.0f
-                        } else {
-                            // 이미지가 세로로 더 길 경우
-                            scale = imageViewHeight.toFloat() / imageHeight.toFloat()
-                            offsetX += (imageViewWidth - imageWidth * scale) / 2.0f
-                        }
-                        
-                        // 터치 좌표를 실제 이미지 좌표로 변환
-                        val x = ((event.x - offsetX) / scale).toInt()
-                        val y = ((event.y - offsetY) / scale).toInt()
-                        
-                        // 좌표가 이미지 범위 내에 있는지 확인
-                        if (x < 0 || x >= imageWidth || y < 0 || y >= imageHeight) {
-                            return@setOnTouchListener true
-                        }
-                        
-                        touchedBitmap?.let { bitmap ->
-                            touchedCanvas?.drawBitmap(matInput?.let { mat ->
-                                val tempBitmap = Bitmap.createBitmap(mat.cols(), mat.rows(), Bitmap.Config.ARGB_8888)
-                                Utils.matToBitmap(mat, tempBitmap)
-                                tempBitmap
-                            } ?: return@let, 0f, 0f, null)
-                            
-                            touchedCanvas?.drawCircle(x.toFloat(), y.toFloat(), 5f, pointPaint)
-                            imageView.setImageBitmap(touchedBitmap)
-                            
-                            lastTouchX = x.toFloat()
-                            lastTouchY = y.toFloat()
-                        }
+    private fun initializeSeekBars() {
+        hSeekBarMin = findViewById(R.id.hSeekBarMin)
+        hSeekBarMax = findViewById(R.id.hSeekBarMax)
+        sMinSeekBar = findViewById(R.id.sMinSeekBar)
+        sMaxSeekBar = findViewById(R.id.sMaxSeekBar)
+        vMinSeekBar = findViewById(R.id.vMinSeekBar)
+        vMaxSeekBar = findViewById(R.id.vMaxSeekBar)
+        confirmButton = findViewById(R.id.confirmButton)
 
-                        matInput?.let { mat ->
-                            val hsvMat = Mat()
-                            Imgproc.cvtColor(mat, hsvMat, Imgproc.COLOR_BGR2HSV)
-                            
-                            val pixel = ByteArray(3)
-                            hsvMat.get(y, x, pixel)
-                            
-                            val hue = pixel[0].toInt() and 0xFF
-                            val saturation = pixel[1].toInt() and 0xFF
-                            val value = pixel[2].toInt() and 0xFF
+        // 초기값 설정
+        hSeekBarMax.progress = 179
+        sMaxSeekBar.progress = 255
+        vMaxSeekBar.progress = 255
+    }
 
-                            val hueAngle = (hue * 2)
-                            val saturationPercent = (saturation * 100 / 255)
-                            val valuePercent = (value * 100 / 255)
-                            
-                            hsvInfoTextView.text = """
-                                원본 HSV: ($hue, $saturation, $value)
-                                변환 HSV: (${hueAngle}°, ${saturationPercent}%, ${valuePercent}%)
-                                색상: ${getColorName(hue, saturation, value)}
-                            """.trimIndent()
-                            
-                            hsvMat.release()
-                        }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                    true
-                }
-                else -> false
+    private fun setupSeekBarListeners() {
+        hSeekBarMin.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                hMin = progress
+                updateImageWithHSVFilter()
             }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+        hSeekBarMax.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                hMax = progress
+                updateImageWithHSVFilter()
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+        
+        sMinSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                sMin = progress
+                updateImageWithHSVFilter()
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+        sMaxSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                sMax = progress
+                updateImageWithHSVFilter()
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+        vMinSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                vMin = progress
+                updateImageWithHSVFilter()
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+        vMaxSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                vMax = progress
+                updateImageWithHSVFilter()
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+    }
+
+    private fun updateImageWithHSVFilter() {
+        matInput?.let { mat ->
+            val hsvMat = Mat()
+            val resultMat = Mat()
+            
+            // Imgproc.cvtColor(mat, hsvMat, Imgproc.COLOR_BGRHSV)
+            Imgproc.cvtColor(mat, hsvMat, Imgproc.COLOR_RGB2HSV)
+            
+            val lowerBound = Scalar(hMin.toDouble(), sMin.toDouble(), vMin.toDouble())
+            val upperBound = Scalar(hMax.toDouble(), sMax.toDouble(), vMax.toDouble())
+            Core.inRange(hsvMat, lowerBound, upperBound, resultMat)
+            
+            // 원본 이미지에 마스크 적용
+            val filteredMat = Mat()
+            mat.copyTo(filteredMat, resultMat)
+            
+            // 결과를 화면에 표시
+            val resultBitmap = Bitmap.createBitmap(
+                filteredMat.cols(), 
+                filteredMat.rows(), 
+                Bitmap.Config.ARGB_8888
+            )
+            Utils.matToBitmap(filteredMat, resultBitmap)
+            imageView.setImageBitmap(resultBitmap)
+            
+            // 메모리 해제
+            hsvMat.release()
+            resultMat.release()
+            filteredMat.release()
         }
     }
 
-    private fun getColorName(hue: Int, saturation: Int, value: Int): String {
-        if (value < 30) {
-            return "검정"
-        }
-        if (saturation < 50) {
-            return if (value < 128) "어두운 회색" else "밝은 회색"
-        }
-        if (value > 240 && saturation < 80) {
-            return "흰색"
-        }
-
-        return when (hue) {
-            in 0..9 -> "빨강"
-            in 10..20 -> "주황"
-            in 21..35 -> "노랑"
-            in 36..75 -> "초록"
-            in 76..100 -> "청록"
-            in 101..125 -> "파랑"
-            in 126..145 -> "보라"
-            in 146..179 -> "빨강"
-            else -> "알 수 없음"
+    private fun setupConfirmButton() {
+        confirmButton.setOnClickListener {
+            // AlertDialog로 HSV 범위 값 표시
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("선택된 HSV 범위")
+                .setMessage("""
+                    H: $hMin - $hMax
+                    S: $sMin - $sMax
+                    V: $vMin - $vMax
+                    
+                    이 값으로 선택하시겠습니까?
+                """.trimIndent())
+                .setPositiveButton("확인") { _, _ ->
+                    // HSV 범위 값을 Intent에 담아 결과 반환
+                    val intent = Intent().apply {
+                        putExtra("hsvRange", HSVRange(hMin, hMax, sMin, sMax, vMin, vMax))
+                    }
+                    setResult(RESULT_OK, intent)
+                    finish()
+                }
+                .setNegativeButton("취소", null)
+                .show()
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
         matInput?.release()
-        touchedBitmap?.recycle()
-        touchedBitmap = null
+    }
+}
+
+// HSV 범위를 저장할 데이터 클래스
+data class HSVRange(
+    val hMin: Int,
+    val hMax: Int,
+    val sMin: Int,
+    val sMax: Int,
+    val vMin: Int,
+    val vMax: Int
+) : Parcelable {
+    constructor(parcel: Parcel) : this(
+        parcel.readInt(),
+        parcel.readInt(),
+        parcel.readInt(),
+        parcel.readInt(),
+        parcel.readInt(),
+        parcel.readInt()
+    )
+
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeInt(hMin)
+        parcel.writeInt(hMax)
+        parcel.writeInt(sMin)
+        parcel.writeInt(sMax)
+        parcel.writeInt(vMin)
+        parcel.writeInt(vMax)
+    }
+
+    override fun describeContents(): Int = 0
+
+    companion object CREATOR : Parcelable.Creator<HSVRange> {
+        override fun createFromParcel(parcel: Parcel): HSVRange = HSVRange(parcel)
+        override fun newArray(size: Int): Array<HSVRange?> = arrayOfNulls(size)
     }
 }

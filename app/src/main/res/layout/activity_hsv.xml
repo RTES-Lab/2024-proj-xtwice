@@ -6,19 +6,86 @@
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_above="@id/hsvInfoTextView"
+        android:layout_height="0dp"
+        android:layout_above="@id/controlsLayout"
+        android:layout_alignParentTop="true"
+        android:scaleType="fitCenter"/>
+
+    <LinearLayout
+        android:id="@+id/controlsLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/confirmButton"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="H (색상) 최소/최대: 0-179"/>
+            
+        <SeekBar
+            android:id="@+id/hSeekBarMin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="179"/>
+        <SeekBar
+            android:id="@+id/hSeekBarMax"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="179"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="S (채도) 최소/최대: 0-255"/>
+            
+        <SeekBar
+            android:id="@+id/sMinSeekBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="255"/>
+        <SeekBar
+            android:id="@+id/sMaxSeekBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="255"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="V (명도) 최소/최대: 0-255"/>
+            
+        <SeekBar
+            android:id="@+id/vMinSeekBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="255"/>
+        <SeekBar
+            android:id="@+id/vMaxSeekBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="255"/>
+
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/confirmButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
         android:layout_margin="16dp"
-        android:scaleType="fitCenter"
-        android:adjustViewBounds="true"/>
+        android:text="선택하기"/>
 
     <TextView
         android:id="@+id/hsvInfoTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
+        android:layout_above="@id/confirmButton"
         android:layout_centerHorizontal="true"
-        android:layout_margin="16dp"
+        android:layout_margin="8dp"
         android:background="#80000000"
         android:padding="8dp"
         android:textColor="#FFFFFF"/>
