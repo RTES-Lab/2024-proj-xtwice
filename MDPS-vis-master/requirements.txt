@@ -1,0 +1,4 @@
+cupy-cuda11x==12.2.0
+numpy==1.26.1
+scipy==1.11.3
+opencv-python==4.7.0.72
