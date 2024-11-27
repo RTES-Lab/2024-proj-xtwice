@@ -210,8 +210,8 @@ def get_data_label(df: pd.DataFrame, target: str) -> Tuple[np.ndarray, np.ndarra
     Y = df['fault_type_encoded'].values
     
     arr = np.vstack(df[target]) 
-    for i in range(len(label_encoder.classes_)):
-        print(f"{i}: {label_encoder.classes_[i]}")
+    # for i in range(len(label_encoder.classes_)):
+    #     print(f"{i}: {label_encoder.classes_[i]}")
     X = np.hstack([arr])
 
     return X, Y
