@@ -1,4 +1,5 @@
 output_dir: '../MDPS-vis-master/output'
+model_dir: './model/saved'
 
 axis_to_csv_dic:
   'F': ['x.csv', 'z.csv']
@@ -19,8 +20,10 @@ conversion_factors:
     '1105': {'F': {'H': 0.0479, 'IR': 0.05, 'OR': 0.05, 'B': 0.05}}
     }
 
+# 데이터를 읽을 샘플 크기와 오버랩 정도
 sample_size: 2048
 overlap: 1024
 
+# 훈련 관련 파라미터
 epochs: 200
 batch_size: 128

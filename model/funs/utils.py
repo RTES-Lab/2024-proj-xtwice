@@ -4,6 +4,7 @@ import yaml
 from box import Box
 
 import numpy as np
+import pandas as pd
 import random
 
 import torch
@@ -31,6 +32,7 @@ def load_yaml(config_path: str) -> Box:
 
     return config
 
+
 def set_seed(seed: int):
     """
     랜덤 시드 고정 함수.
@@ -48,14 +50,16 @@ def set_seed(seed: int):
         torch.cuda.manual_seed_all(seed)
 
 
-def get_peak_rms_hist(df, save_path):
+def get_peak_rms_hist_pic(df: pd.DataFrame, save_path: str):
     """
-    augmented_df의 RMS와 Peak 값 분포를 히스토그램으로 저장하는 함수 (레전드 포함).
-    히스토그램을 위아래로 배치하여 저장.
-    
-    Args:
-        df (pd.DataFrame): RMS와 Peak 값이 포함된 데이터프레임.
-        save_path (str): 저장할 이미지 파일 경로.
+    주어진 데이터프레임에서 각 fault_type에 대한 Peak과 RMS 값의 분포를 히스토그램으로 생성하고 저장하는 함수
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        fault_type, peak, rms 등의 값이 포함된 데이터프레임
+    save_path : str
+        히스토그램 이미지를 저장할 파일 경로
     """
     fault_type_list = ['H', 'OR', 'B', 'IR']
     
