@@ -47,6 +47,15 @@ def main(yaml_config, target_config, target='rms'):
     with open(f'ANN_{target}.tflite', 'wb') as f:
         f.write(tflite_model)
 
+    interpreter = tf.lite.Interpreter(model_content=tflite_model)
+    interpreter.allocate_tensors()
+
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
+
+    print("Input shape:", input_details[0]['shape'])  
+    print("Output shape:", output_details[0]['shape'])  
+
 if __name__=="__main__":
 
     ########################

@@ -131,9 +131,10 @@ def get_data_label(df, target):
     label_encoder = LabelEncoder()
     df['fault_type_encoded'] = label_encoder.fit_transform(df['fault_type'])
     Y = df['fault_type_encoded'].values
-
+    
     arr = np.vstack(df[target]) 
-
+    for i in range(len(label_encoder.classes_)):
+        print(f"{i}: {label_encoder.classes_[i]}")
     X = np.hstack([arr])
 
     return X, Y
