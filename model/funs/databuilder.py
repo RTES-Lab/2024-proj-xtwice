@@ -134,6 +134,6 @@ def get_data_label(df, target):
 
     arr = np.vstack(df[target]) 
 
-    X = np.hstack([Y.reshape(-1, 1), arr])
+    X = np.hstack([arr])
 
     return X, Y
