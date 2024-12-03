@@ -58,10 +58,10 @@ class HSVActivity : AppCompatActivity() {
 
         imageView = findViewById(R.id.imageView)
         hsvInfoTextView = findViewById(R.id.hsvInfoTextView)
-        
+
         roiData = intent.getParcelableExtra("roiData")
         val videoUri = intent.getStringExtra("videoUri")?.let { Uri.parse(it) }
-        
+
         loadAndProcessImage(videoUri)
         initializeSeekBars()
         setupSeekBarListeners()
@@ -74,7 +74,7 @@ class HSVActivity : AppCompatActivity() {
             try {
                 retriever.setDataSource(this, videoUri)
                 originalBitmap = retriever.getFrameAtTime(0)
-                
+
                 roiData?.let { roi ->
                     val croppedBitmap = Bitmap.createBitmap(
                         originalBitmap!!,
@@ -83,7 +83,7 @@ class HSVActivity : AppCompatActivity() {
                         roi.right - roi.left,
                         roi.bottom - roi.top
                     )
-                    
+
                     matInput = Mat()
                     Utils.bitmapToMat(croppedBitmap, matInput)
                     imageView.setImageBitmap(croppedBitmap)
@@ -127,7 +127,7 @@ class HSVActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
-        
+
         sMinSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 sMin = progress
@@ -169,27 +169,27 @@ class HSVActivity : AppCompatActivity() {
         matInput?.let { mat ->
             val hsvMat = Mat()
             val resultMat = Mat()
-            
+
             // Imgproc.cvtColor(mat, hsvMat, Imgproc.COLOR_BGRHSV)
             Imgproc.cvtColor(mat, hsvMat, Imgproc.COLOR_RGB2HSV)
-            
+
             val lowerBound = Scalar(hMin.toDouble(), sMin.toDouble(), vMin.toDouble())
             val upperBound = Scalar(hMax.toDouble(), sMax.toDouble(), vMax.toDouble())
             Core.inRange(hsvMat, lowerBound, upperBound, resultMat)
-            
+
             // 원본 이미지에 마스크 적용
             val filteredMat = Mat()
             mat.copyTo(filteredMat, resultMat)
-            
+
             // 결과를 화면에 표시
             val resultBitmap = Bitmap.createBitmap(
-                filteredMat.cols(), 
-                filteredMat.rows(), 
+                filteredMat.cols(),
+                filteredMat.rows(),
                 Bitmap.Config.ARGB_8888
             )
             Utils.matToBitmap(filteredMat, resultBitmap)
             imageView.setImageBitmap(resultBitmap)
-            
+
             // 메모리 해제
             hsvMat.release()
             resultMat.release()
@@ -210,11 +210,16 @@ class HSVActivity : AppCompatActivity() {
                     이 값으로 선택하시겠습니까?
                 """.trimIndent())
                 .setPositiveButton("확인") { _, _ ->
-                    // HSV 범위 값을 Intent에 담아 결과 반환
-                    val intent = Intent().apply {
+                    // MarkerCenterActivity로 전환하면서 데이터 전달
+                    val intent = Intent(this, MarkerCenterActivity::class.java).apply {
+                        // HSV 범위 전달
                         putExtra("hsvRange", HSVRange(hMin, hMax, sMin, sMax, vMin, vMax))
+                        // ROI 데이터 전달
+                        putExtra("roiData", roiData)
+                        // 비디오 URI 전달
+                        putExtra("videoUri", getIntent().getStringExtra("videoUri"))
                     }
-                    setResult(RESULT_OK, intent)
+                    startActivity(intent)
                     finish()
                 }
                 .setNegativeButton("취소", null)

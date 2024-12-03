@@ -40,6 +40,14 @@
         <activity
             android:name=".HSVActivity"
             android:exported="false" />
+
+        <activity android:name=".MarkerCenterActivity"
+            android:exported="false" />
+
+        <activity android:name=".DisplacementActivity"
+            android:exported="false"  />
+
+
     </application>
 
 </manifest>

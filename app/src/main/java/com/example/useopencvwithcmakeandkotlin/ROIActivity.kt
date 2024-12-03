@@ -62,7 +62,7 @@ class ROIActivity : AppCompatActivity() {
         cropButton.isEnabled = false
 
         val videoUri = intent.getStringExtra("videoUri")?.let { Uri.parse(it) }
-        
+
         videoUri?.let {
             val retriever = MediaMetadataRetriever()
             try {
@@ -70,12 +70,12 @@ class ROIActivity : AppCompatActivity() {
                 originalBitmap = retriever.getFrameAtTime(0)
                 drawingBitmap = originalBitmap?.copy(Bitmap.Config.ARGB_8888, true)
                 canvas = drawingBitmap?.let { Canvas(it) }
-                
+
                 matInput = Mat()
                 Utils.bitmapToMat(originalBitmap, matInput)
-                
+
                 imageView.setImageBitmap(drawingBitmap)
-                
+
                 setupTouchListener()
                 setupButtons()
             } finally {
@@ -114,17 +114,17 @@ class ROIActivity : AppCompatActivity() {
     private fun drawRect(endX: Float, endY: Float) {
         drawingBitmap = originalBitmap?.copy(Bitmap.Config.ARGB_8888, true)
         canvas = drawingBitmap?.let { Canvas(it) }
-        
+
         val left = minOf(startX, endX)
         val top = minOf(startY, endY)
         val right = maxOf(startX, endX)
         val bottom = maxOf(startY, endY)
-        
+
         currentRect = RectF(left, top, right, bottom)
         currentRect?.let { rect ->
             canvas?.drawRect(rect, paint)
         }
-        
+
         imageView.setImageBitmap(drawingBitmap)
     }
 
@@ -148,7 +148,7 @@ class ROIActivity : AppCompatActivity() {
             resetButton.visibility = View.GONE
             cropButton.isEnabled = false
             currentRect = null
-            
+
             // 원본 이미지 다시 표시
             drawingBitmap = originalBitmap?.copy(Bitmap.Config.ARGB_8888, true)
             canvas = drawingBitmap?.let { Canvas(it) }
@@ -157,15 +157,29 @@ class ROIActivity : AppCompatActivity() {
 
         finishROIButton.setOnClickListener {
             currentRect?.let { rectF ->
-                // ROI 좌표 저장
+                // ImageView의 실제 표시 영역 가져오기
+                val imageViewRect = RectF()
+                imageView.getDrawingRect(Rect().apply {
+                    imageView.getGlobalVisibleRect(this)
+                    imageViewRect.set(this)
+                })
+
+                // 이미지의 실제 크기
+                val imageWidth = originalBitmap?.width ?: 0
+                val imageHeight = originalBitmap?.height ?: 0
+
+                // 좌표 변환
+                val scaleX = imageWidth / imageViewRect.width()
+                val scaleY = imageHeight / imageViewRect.height()
+
+                // ROI 좌표 저장 (스케일 적용)
                 val roiData = ROIData(
-                    rectF.left.toInt(),
-                    rectF.top.toInt(),
-                    rectF.right.toInt(),
-                    rectF.bottom.toInt()
+                    (rectF.left * scaleX).toInt(),
+                    (rectF.top * scaleY).toInt(),
+                    (rectF.right * scaleX).toInt(),
+                    (rectF.bottom * scaleY).toInt()
                 )
-                
-                // HSVActivity로 전환
+
                 val intent = Intent(this, HSVActivity::class.java).apply {
                     putExtra("roiData", roiData)
                     putExtra("videoUri", getIntent().getStringExtra("videoUri"))
@@ -180,7 +194,7 @@ class ROIActivity : AppCompatActivity() {
         try {
             val width = rect.width()
             val height = rect.height()
-            
+
             if (width <= 0 || height <= 0) {
                 Toast.makeText(this, "유효한 영역을 선택해주세요", Toast.LENGTH_SHORT).show()
                 return
@@ -196,7 +210,7 @@ class ROIActivity : AppCompatActivity() {
                 )
                 imageView.setImageBitmap(croppedBitmap)
                 Toast.makeText(this, "ROI 영역이 잘렸습니다", Toast.LENGTH_SHORT).show()
-                
+
                 // ROI 잘린 후 상태 변경
                 isROICropped = true
                 cropButton.visibility = View.GONE
@@ -242,4 +256,3 @@ data class ROIData(
         override fun newArray(size: Int): Array<ROIData?> = arrayOfNulls(size)
     }
 }
-
