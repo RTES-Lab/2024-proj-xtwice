@@ -11,7 +11,7 @@ class MyModel(context: Context) {
 
     init {
         val assetManager = context.assets
-        val modelFile = assetManager.openFd("ANN_rms.tflite")
+        val modelFile = assetManager.openFd("ANN_peak.tflite")
         val inputStream = FileInputStream(modelFile.fileDescriptor)
         val fileChannel = inputStream.channel
         val startOffset = modelFile.startOffset
