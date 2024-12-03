@@ -42,7 +42,7 @@ class MainActivity : AppCompatActivity() {
                 val predictedClass =
                     if (maxProbabilityIndex != -1) classes[maxProbabilityIndex] else "Unknown"
 
-                resultText.text = "Class Probabilities: [$probabilities]\nPredicted Class: $predictedClass"
+                resultText.text = "Class Probabilities: \n[$probabilities]\nPredicted Class: $predictedClass"
             } catch (e: NumberFormatException) {
                 Toast.makeText(this, "Invalid input. Please enter a valid number.", Toast.LENGTH_SHORT).show()
             }
