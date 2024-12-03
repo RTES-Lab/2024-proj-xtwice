@@ -30,6 +30,9 @@ import android.net.Uri
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.content.ContentUris
+import android.graphics.Bitmap
+import android.widget.ImageView
+import org.opencv.android.Utils
 
 class DisplacementActivity : AppCompatActivity() {
     private lateinit var videoUri: String
@@ -39,6 +42,7 @@ class DisplacementActivity : AppCompatActivity() {
     private var fps: Float = 30f
     private lateinit var progressBar: ProgressBar
     private lateinit var statusTextView: TextView
+    private lateinit var firstFrameImageView: ImageView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,6 +50,7 @@ class DisplacementActivity : AppCompatActivity() {
 
         progressBar = findViewById(R.id.progressBar)
         statusTextView = findViewById(R.id.statusTextView)
+        firstFrameImageView = findViewById(R.id.firstFrameImageView)
 
         // 데이터 받기
         videoUri = intent.getStringExtra("videoUri") ?: ""
@@ -108,6 +113,51 @@ class DisplacementActivity : AppCompatActivity() {
         val initialY = markerPoints[0].y
         var currentFrame = 0
 
+        // 첫 프레임 읽기
+        if (videoCapture.read(frame)) {
+            // 프레임 회전
+            val rotatedFrame = Mat()
+            Core.rotate(frame, rotatedFrame, Core.ROTATE_90_CLOCKWISE)
+            
+            // BGR을 RGB로 변환 (추가)
+            Imgproc.cvtColor(rotatedFrame, rotatedFrame, Imgproc.COLOR_BGR2RGB)
+            
+            // ROI 영역 표시를 위한 프레임 복사
+            val displayFrame = rotatedFrame.clone()
+            
+            // ROI 추출 및 표시
+            val safeTop = roiData.top.coerceIn(0, rotatedFrame.rows())
+            val safeBottom = roiData.bottom.coerceIn(0, rotatedFrame.rows())
+            val safeLeft = roiData.left.coerceIn(0, rotatedFrame.cols())
+            val safeRight = roiData.right.coerceIn(0, rotatedFrame.cols())
+            
+            // ROI 영역 표시 (빨간색 사각형)
+            Imgproc.rectangle(
+                displayFrame,
+                org.opencv.core.Point(safeLeft.toDouble(), safeTop.toDouble()),
+                org.opencv.core.Point(safeRight.toDouble(), safeBottom.toDouble()),
+                Scalar(255.0, 0.0, 0.0),
+                2
+            )
+            
+            // 결과 이미지를 화면에 표시
+            val resultBitmap = Bitmap.createBitmap(
+                displayFrame.cols(),
+                displayFrame.rows(),
+                Bitmap.Config.ARGB_8888
+            )
+            Utils.matToBitmap(displayFrame, resultBitmap)
+            
+            runOnUiThread {
+                firstFrameImageView.setImageBitmap(resultBitmap)
+            }
+            
+            // 메모리 해제
+            rotatedFrame.release()
+            displayFrame.release()
+        }
+        
+        // 나머지 프레임 처리 계속...
         while (videoCapture.read(frame)) {
             currentFrame++
             if (frame.empty()) {

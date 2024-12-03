@@ -213,7 +213,7 @@ class MarkerCenterActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // 다음 Activity��� 데이터 전달
+            // 다음 DisplacementActivity로 데이터 전달
             val intent = Intent(this, DisplacementActivity::class.java).apply {
                 putExtra("videoUri", getIntent().getStringExtra("videoUri"))
                 putExtra("roiData", getIntent().getParcelableExtra<ROIData>("roiData"))

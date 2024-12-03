@@ -2,37 +2,28 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/hsvInfoTextView"
+    <ImageView
+        android:id="@+id/firstFrameImageView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textSize="14sp"
-        android:layout_marginBottom="8dp"/>
-
-    <TextView
-        android:id="@+id/frameInfoTextView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textSize="14sp"
-        android:layout_marginBottom="16dp"/>
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:scaleType="fitCenter"
+        android:adjustViewBounds="true" />
 
     <ProgressBar
         android:id="@+id/progressBar"
-        style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"/>
+        style="?android:attr/progressBarStyleHorizontal" />
 
     <TextView
         android:id="@+id/statusTextView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:textSize="16sp"
-        android:layout_marginBottom="16dp"/>
+        android:padding="16dp" />
 
     <Button
         android:id="@+id/shareButton"
@@ -40,6 +31,6 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:text="CSV 파일 공유"
-        android:visibility="gone"/>
+        android:visibility="gone" />
 
 </LinearLayout>
