@@ -1,6 +1,7 @@
 package com.example.useopencvwithcmakeandkotlin
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import androidx.appcompat.app.AppCompatActivity
@@ -48,12 +49,17 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == REQUEST_VIDEO_PICK && resultCode == RESULT_OK) {
             val videoUri = data?.data
             videoUri?.let {
-                val intent = Intent(this, ROIActivity::class.java).apply {
-                    putExtra("videoUri", it.toString())
-                }
-                startActivity(intent)
+                handleSelectedVideo(it)
             }
         }
+    }
+
+    // 비디오 선택 후 처리하는 부분
+    private fun handleSelectedVideo(uri: Uri) {
+        val intent = Intent(this, VideoSizeActivity::class.java).apply {
+            putExtra("videoUri", uri.toString())
+        }
+        startActivity(intent)
     }
 
     companion object {

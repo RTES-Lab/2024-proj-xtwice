@@ -24,6 +24,9 @@ import org.opencv.core.Core
 import org.opencv.core.Mat
 import org.opencv.core.Scalar
 import org.opencv.imgproc.Imgproc
+import android.util.Log
+import android.graphics.PointF
+import android.graphics.Matrix
 
 class ROIActivity : AppCompatActivity() {
     companion object {
@@ -50,6 +53,8 @@ class ROIActivity : AppCompatActivity() {
         style = Paint.Style.STROKE
         strokeWidth = 5f
     }
+    private var videoWidth: Int = 0
+    private var videoHeight: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -82,33 +87,82 @@ class ROIActivity : AppCompatActivity() {
                 retriever.release()
             }
         }
+
+        // 비디오 크기 정보 받기
+        videoWidth = intent.getIntExtra("videoWidth", 0)
+        videoHeight = intent.getIntExtra("videoHeight", 0)
+
+        setupImageView()
+    }
+
+    private fun setupImageView() {
+        imageView.scaleType = ImageView.ScaleType.FIT_CENTER  // 이미지 스케일 타입 지정
     }
 
     private fun setupTouchListener() {
-        imageView.setOnTouchListener { _, event ->
-            if (!isROICropped) {  // ROI가 잘리지 않은 상태에서만 터치 이벤트 처리
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN -> {
-                        startX = event.x
-                        startY = event.y
-                        currentRect = null
-                        cropButton.isEnabled = false
-                        true
+        imageView.setOnTouchListener { view, event ->
+            if (!isROICropped) {
+                val bitmapCoords = getBitmapCoordinates(view as ImageView, event)
+
+                if (bitmapCoords.x >= 0 && bitmapCoords.x < (originalBitmap?.width ?: 0) &&
+                    bitmapCoords.y >= 0 && bitmapCoords.y < (originalBitmap?.height ?: 0)) {
+
+                    when (event.action) {
+                        MotionEvent.ACTION_DOWN -> {
+                            startX = bitmapCoords.x
+                            startY = bitmapCoords.y
+                            currentRect = null
+                            cropButton.isEnabled = false
+                            true
+                        }
+                        MotionEvent.ACTION_MOVE -> {
+                            drawRect(bitmapCoords.x, bitmapCoords.y)
+                            true
+                        }
+                        MotionEvent.ACTION_UP -> {
+                            drawRect(bitmapCoords.x, bitmapCoords.y)
+                            cropButton.isEnabled = true
+                            true
+                        }
+                        else -> false
                     }
-                    MotionEvent.ACTION_MOVE -> {
-                        drawRect(event.x, event.y)
-                        true
-                    }
-                    MotionEvent.ACTION_UP -> {
-                        drawRect(event.x, event.y)
-                        cropButton.isEnabled = true
-                        true
-                    }
-                    else -> false
-                }
-            }
-            true
+                    true
+                } else false
+            } else false
         }
+    }
+
+    private fun getBitmapCoordinates(imageView: ImageView, event: MotionEvent): PointF {
+        val matrix = Matrix()
+        imageView.imageMatrix.invert(matrix)
+
+        val touchPoint = floatArrayOf(event.x, event.y)
+        matrix.mapPoints(touchPoint)
+
+        return PointF(touchPoint[0], touchPoint[1])
+    }
+
+    // 이미지뷰 내의 실제 이미지 영역을 계산하는 함수 추가
+    private fun getImageBounds(imageView: ImageView): RectF {
+        val drawable = imageView.drawable ?: return RectF()
+        val matrix = imageView.imageMatrix
+        
+        val bounds = RectF(0f, 0f, 
+            drawable.intrinsicWidth.toFloat(),
+            drawable.intrinsicHeight.toFloat())
+            
+        matrix.mapRect(bounds)
+
+        // 이미지뷰의 크기와 이미지의 크기를 비교하여 여백 계산
+        val viewWidth = imageView.width.toFloat()
+        val viewHeight = imageView.height.toFloat()
+        val imageWidth = bounds.width()
+        val imageHeight = bounds.height()
+
+        val leftPadding = (viewWidth - imageWidth) / 2
+        val topPadding = (viewHeight - imageHeight) / 2
+
+        return RectF(leftPadding, topPadding, leftPadding + imageWidth, topPadding + imageHeight)
     }
 
     private fun drawRect(endX: Float, endY: Float) {
@@ -156,37 +210,7 @@ class ROIActivity : AppCompatActivity() {
         }
 
         finishROIButton.setOnClickListener {
-            currentRect?.let { rectF ->
-                // ImageView의 실제 표시 영역 가져오기
-                val imageViewRect = RectF()
-                imageView.getDrawingRect(Rect().apply {
-                    imageView.getGlobalVisibleRect(this)
-                    imageViewRect.set(this)
-                })
-
-                // 이미지의 실제 크기
-                val imageWidth = originalBitmap?.width ?: 0
-                val imageHeight = originalBitmap?.height ?: 0
-
-                // 좌표 변환
-                val scaleX = imageWidth / imageViewRect.width()
-                val scaleY = imageHeight / imageViewRect.height()
-
-                // ROI 좌표 저장 (스케일 적용)
-                val roiData = ROIData(
-                    (rectF.left * scaleX).toInt(),
-                    (rectF.top * scaleY).toInt(),
-                    (rectF.right * scaleX).toInt(),
-                    (rectF.bottom * scaleY).toInt()
-                )
-
-                val intent = Intent(this, HSVActivity::class.java).apply {
-                    putExtra("roiData", roiData)
-                    putExtra("videoUri", getIntent().getStringExtra("videoUri"))
-                }
-                startActivity(intent)
-                finish()
-            }
+            finishROI()
         }
     }
 
@@ -196,7 +220,7 @@ class ROIActivity : AppCompatActivity() {
             val height = rect.height()
 
             if (width <= 0 || height <= 0) {
-                Toast.makeText(this, "유효한 영역을 선택해주세요", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "유효한 영역을 선택하세요", Toast.LENGTH_SHORT).show()
                 return
             }
 
@@ -219,6 +243,62 @@ class ROIActivity : AppCompatActivity() {
         } catch (e: Exception) {
             e.printStackTrace()
             Toast.makeText(this, "유효한 영역을 선택해주세요", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun finishROI() {
+        currentRect?.let { rect ->
+            // 이미지뷰의 실제 이미지 영역 계산
+            val imageRect = getImageBounds(imageView)
+            
+            // 디버깅을 위한 상세 로그 추가
+            Log.d("ROIActivity", """
+                Debug Info:
+                Original Image Size: ${originalBitmap?.width} x ${originalBitmap?.height}
+                ImageView Size: ${imageView.width} x ${imageView.height}
+                Image Display Rect: ${imageRect.left}, ${imageRect.top}, ${imageRect.right}, ${imageRect.bottom}
+                Selected ROI (Raw): ${rect.left}, ${rect.top}, ${rect.right}, ${rect.bottom}
+                Selected ROI relative to ImageRect:
+                Left: ${rect.left - imageRect.left}
+                Top: ${rect.top - imageRect.top}
+                Right: ${rect.right - imageRect.left}
+                Bottom: ${rect.bottom - imageRect.top}
+            """.trimIndent())
+
+            // ROI 좌표를 원본 이미지 좌표계로 변환
+            val scaleX = originalBitmap?.width?.toFloat()!! / (imageRect.right - imageRect.left)
+            val scaleY = originalBitmap?.height?.toFloat()!! / (imageRect.bottom - imageRect.top)
+
+            // 이미지뷰 내에서의 상대적인 위치 계산
+            val relativeLeft = rect.left - imageRect.left
+            val relativeTop = rect.top - imageRect.top
+            val relativeRight = rect.right - imageRect.left
+            val relativeBottom = rect.bottom - imageRect.top
+
+            // 원본 이미지 좌표로 변환
+            val left = (relativeLeft * scaleX).toInt().coerceIn(0, originalBitmap?.width ?: 0)
+            val top = (relativeTop * scaleY).toInt().coerceIn(0, originalBitmap?.height ?: 0)
+            val right = (relativeRight * scaleX).toInt().coerceIn(0, originalBitmap?.width ?: 0)
+            val bottom = (relativeBottom * scaleY).toInt().coerceIn(0, originalBitmap?.height ?: 0)
+
+            // 변환된 좌표 로그
+            Log.d("ROIActivity", """
+                Transformed Coordinates:
+                Scale factors: scaleX=$scaleX, scaleY=$scaleY
+                Final ROI: Left=$left, Top=$top, Right=$right, Bottom=$bottom
+            """.trimIndent())
+
+            if (left < right && top < bottom) {
+                val roiData = ROIData(left, top, right, bottom)
+                val intent = Intent(this, HSVActivity::class.java).apply {
+                    putExtra("roiData", roiData)
+                    putExtra("videoUri", getIntent().getStringExtra("videoUri"))
+                }
+                startActivity(intent)
+                finish()
+            } else {
+                Toast.makeText(this, "유효한 ROI 영역을 선택해주세요", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 

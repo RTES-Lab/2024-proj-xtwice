@@ -23,6 +23,8 @@ import org.opencv.imgproc.Imgproc
 import android.media.MediaMetadataRetriever
 import android.os.Parcel
 import android.os.Parcelable
+import android.util.Log
+import android.widget.Toast
 
 class HSVActivity : AppCompatActivity() {
     companion object {
@@ -62,6 +64,11 @@ class HSVActivity : AppCompatActivity() {
         roiData = intent.getParcelableExtra("roiData")
         val videoUri = intent.getStringExtra("videoUri")?.let { Uri.parse(it) }
 
+        // ROI 데이터 로그 출력
+        roiData?.let {
+            Log.d("HSVActivity", "Received ROI Data - Left: ${it.left}, Top: ${it.top}, Right: ${it.right}, Bottom: ${it.bottom}")
+        } ?: Log.e("HSVActivity", "ROI Data is null")
+
         loadAndProcessImage(videoUri)
         initializeSeekBars()
         setupSeekBarListeners()
@@ -74,20 +81,40 @@ class HSVActivity : AppCompatActivity() {
             try {
                 retriever.setDataSource(this, videoUri)
                 originalBitmap = retriever.getFrameAtTime(0)
-
+                
+                // ROI 데이터 로그 출력
                 roiData?.let { roi ->
-                    val croppedBitmap = Bitmap.createBitmap(
-                        originalBitmap!!,
-                        roi.left,
-                        roi.top,
-                        roi.right - roi.left,
-                        roi.bottom - roi.top
-                    )
+                    Log.d("HSVActivity", """
+                        Loading image with ROI:
+                        Original bitmap size: ${originalBitmap?.width} x ${originalBitmap?.height}
+                        ROI coordinates: Left=${roi.left}, Top=${roi.top}, Right=${roi.right}, Bottom=${roi.bottom}
+                    """.trimIndent())
 
-                    matInput = Mat()
-                    Utils.bitmapToMat(croppedBitmap, matInput)
-                    imageView.setImageBitmap(croppedBitmap)
-                }
+                    // ROI 유효성 검사
+                    if (roi.left < roi.right && roi.top < roi.bottom &&
+                        roi.right <= (originalBitmap?.width ?: 0) &&
+                        roi.bottom <= (originalBitmap?.height ?: 0)) {
+                        
+                        val croppedBitmap = Bitmap.createBitmap(
+                            originalBitmap!!,
+                            roi.left,
+                            roi.top,
+                            roi.right - roi.left,
+                            roi.bottom - roi.top
+                        )
+                        
+                        matInput = Mat()
+                        Utils.bitmapToMat(croppedBitmap, matInput)
+                        imageView.setImageBitmap(croppedBitmap)
+                    } else {
+                        Log.e("HSVActivity", "Invalid ROI coordinates")
+                        Toast.makeText(this, "잘못된 ROI 좌표입니다", Toast.LENGTH_SHORT).show()
+                    }
+                } ?: Log.e("HSVActivity", "ROI data is null")
+                
+            } catch (e: Exception) {
+                Log.e("HSVActivity", "Error processing image: ${e.message}")
+                e.printStackTrace()
             } finally {
                 retriever.release()
             }

@@ -47,6 +47,8 @@
         <activity android:name=".DisplacementActivity"
             android:exported="false"  />
 
+        <activity android:name=".VideoSizeActivity"
+            android:exported="false"/>
 
     </application>
 
