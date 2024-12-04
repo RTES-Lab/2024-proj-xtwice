@@ -1,16 +1,18 @@
 # utils.py
 
+import random
+import os
+import glob
+
 import yaml
 from box import Box
 
+from typing import List, Optional
+
 import numpy as np
-import pandas as pd
-import random
 
 import torch
 import tensorflow as tf
-
-import matplotlib.pyplot as plt
 
 def load_yaml(config_path: str) -> Box:
     """
@@ -50,72 +52,46 @@ def set_seed(seed: int):
         torch.cuda.manual_seed_all(seed)
 
 
-def get_peak_rms_hist_pic(df: pd.DataFrame, save_path: str):
-    """
-    주어진 데이터프레임에서 각 fault_type에 대한 Peak과 RMS 값의 분포를 히스토그램으로 생성하고 저장하는 함수
-
+def get_dir_list(
+        target_dir: str, 
+        target_bearing: Optional[str] = None, target_rpm: Optional[str] = None, 
+        target_fault_type: Optional[str] = None, target_view: Optional[str] = None, 
+        ) -> List[str]:
+    '''
+    주어진 조건에 맞는 디렉토리 리스트를 반환하는 함수
+    
     Parameters
     ----------
-    df : pd.DataFrame
-        fault_type, peak, rms 등의 값이 포함된 데이터프레임
-    save_path : str
-        히스토그램 이미지를 저장할 파일 경로
-    """
-    fault_type_list = ['H', 'OR', 'B', 'IR']
-    
-    plt.figure(figsize=(20, 15))
-    
-    # 첫 번째 subplot: Peak 히스토그램
-    plt.subplot(2, 2, 1)
-    for fault_type in fault_type_list:
-        subset = df[df['fault_type'] == fault_type]
-        plt.hist(subset['peak'], bins=50, alpha=0.5, label=fault_type)
-    plt.title('Peak Distribution', size=40)  
-    plt.xlabel('Peak [mm]', size=30)  
-    plt.ylabel('Counts', size=30)  
-    plt.xticks(fontsize=25)  
-    plt.yticks(fontsize=25)  
-    plt.legend(fontsize=25, loc='upper right') 
+    target_dir: str
+        검색할 상위 디렉토리 경로.
+    target_bearing: str
+        디렉토리 이름에 포함될 베어링 유형 정보. 기본값은 None.
+    target_rpm: str, optional
+        디렉토리 이름에 포함될 rpm 유형 정보. 기본값은 None.
+    target_fault_type: str, optional
+        디렉토리 이름에 포함될 결함 유형 정보. 기본값은 None.
+    target_view: str, optional
+        디렉토리 이름에 포함될 뷰 정보. 기본값은 None.
 
-    # 두 번째 subplot: RMS 히스토그램
-    plt.subplot(2, 2, 2)
-    for fault_type in fault_type_list:
-        subset = df[df['fault_type'] == fault_type]
-        plt.hist(subset['rms'], bins=50, alpha=0.5, label=fault_type)
-    plt.title('RMS Distribution', size=40)  
-    plt.xlabel('RMS [mm]', size=30)  
-    plt.ylabel('Counts', size=30)  
-    plt.xticks(fontsize=25)  
-    plt.yticks(fontsize=25)  
-    plt.legend(fontsize=25, loc='upper right') 
+    Returns
+    ----------
+    dir_list: List[str]  
+        조건에 맞는 디렉토리 경로 리스트.
+    '''
+    pattern = os.path.join(target_dir, '*')
 
-    # 세 번째 subplot: Average 히스토그램
-    plt.subplot(2, 2, 3)
-    for fault_type in fault_type_list:
-        subset = df[df['fault_type'] == fault_type]
-        plt.hist(subset['avg'], bins=50, alpha=0.5, label=fault_type)
-    plt.title('Average Distribution', size=30)  
-    plt.xlabel('Average [mm]', size=30)  
-    plt.ylabel('Counts', size=30)  
-    plt.xticks(fontsize=25)  
-    plt.yticks(fontsize=25)  
-    plt.legend(fontsize=25, loc='upper right') 
+    if target_bearing:
+        pattern += f'{target_bearing}*'
+    if target_rpm:
+        pattern += f'{target_rpm}*'
+    if target_fault_type:
+        pattern += f'{target_fault_type}*'
+    if target_view:
+        pattern += f'{target_view}'
 
-    # 네 번째 subplot: Crest factor 히스토그램
-    plt.subplot(2, 2, 4)
-    for fault_type in fault_type_list:
-        subset = df[df['fault_type'] == fault_type]
-        plt.hist(subset['crest_factor'], bins=50, alpha=0.5, label=fault_type)
-    plt.title('Crest factor Distribution', size=40)  
-    plt.xlabel('Crest factor [mm]', size=30)  
-    plt.ylabel('Counts', size=30)  
-    plt.xticks(fontsize=25)  
-    plt.yticks(fontsize=25)  
-    plt.legend(fontsize=25, loc='upper right') 
+    dir_list = glob.glob(pattern)
 
-    # 레이아웃 조정 및 저장
-    plt.tight_layout()
-    plt.savefig(save_path)
-    plt.close()
+    if not dir_list:
+        raise FileNotFoundError('The directory that meets your criteria does not exist. Please check the parameters you entered.')
 
-    print(f"히스토그램이 {save_path}에 저장되었습니다.")
+    return sorted(dir_list)

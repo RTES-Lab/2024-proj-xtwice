@@ -8,98 +8,83 @@ import os
 from tqdm import tqdm
 
 from box import Box
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from sklearn.preprocessing import LabelEncoder
 
-
-def calculate_statistics(values):
-    """
-    통계값 계산해주는 함수
-    """
-    peak = np.max(np.abs(values))
-    average = np.mean(values)
-    rms = np.sqrt(np.mean(values**2))
-    crest_factor = peak / rms
-    return peak, average, rms, crest_factor
+import glob
 
 
-def make_dataframe(config: Box, rpm: str, directory: str) -> pd.DataFrame:
+def make_dataframe(
+        config: Box, directory_list: List[str], target_marker: Optional[str] = 'A', max_len: Optional[int] = None
+        ) -> pd.DataFrame:
     """
     주어진 디렉토리에서 각 데이터를 적절히 변환하여 DataFrame을 반환하는 함수
+
 
     Parameters
     ----------
     config : Box
         YAML 파일에서 로드한 설정 값을 포함하는 객체
-    rpm : str
-        필터링할 rpm 값 (예: '1200')
-    directory : str
-        데이터가 저장된 디렉토리 경로
+    directory_list : List[str]
+        데이터가 저장된 디렉토리 경로 리스트
+    target_marker : Optional[str], optional
+        타겟 마커. 기본값은 'A'
+    max_len : Optional[int], optional
+        데이터를 읽을 최대 길이. None이면 모든 데이터를 읽어온다. 기본값은 None
 
     Returns
     -------
     pd.DataFrame
-        데이터프레임 객체, 각 fault_type에 대한 데이터 및 변환된 값을 포함
+        데이터프레임 객체, 각 fault_type에 대한 축 별 변위 데이터를 포함
     """
     df = {}
     df['dir_name'] = []
     df['fault_type'] = []
-    df['x'] = []
-    df['z'] = []
     df['label'] = []
 
-    label_dic = {
-        'H'  : 0,
-        'B'  : 1,
-        'IR' : 2,
-        'OR' : 3
-    }
-
-    # 1105 중 rpm 1200인 데이터만 사용
-    if rpm:
-        filtered_dirs = [
-            os.path.join(directory, d) 
-            for d in os.listdir(directory) 
-            if rpm in d and os.path.isdir(os.path.join(directory, d))
-        ]
-    else:
-        filtered_dirs = [
-            os.path.join(directory, d) 
-            for d in os.listdir(directory) 
-        ]
-
-    # 가장 작은 csv 파일 길이에 맞춤
-    x_len = 1000000
     conversion_factors = config.conversion_factors
+    label_dic = config.label_dic
 
-    for sub_dirs in tqdm(sorted(filtered_dirs)):
-        parts = sub_dirs.split('/')[-1]
+    for sub_dirs in tqdm(sorted(directory_list)):
+        parts = sub_dirs.split(os.path.sep)[-1]
         parts = parts.split('_')
+
         date = parts[0]
-        view = parts[-1]
-        fault_type = parts[-2]
-        bearing_type = parts[-4]
-        date = date[12:]
+        bearing = parts[1]
+        rpm = int(parts[2])
+        fault_type = parts[3]
+        view = parts[4]
 
         df['fault_type'].append(fault_type)
         df['label'].append(label_dic[fault_type])
         df['dir_name'].append(sub_dirs)
 
         axis_list = config.axis_to_csv_dic[view]
+        for axis_csv in axis_list:
+            axis = axis_csv[0]  
+            if axis not in df:
+                df[axis] = []  
 
         for axis_csv in axis_list:
             axis = axis_csv[0]
             file = os.path.join(sub_dirs, axis_csv)
 
-            # 마커 A 기준. 마커 B 사용하고 싶다면,
-            # if target_marker == 'B':
-            #     data = pd.read_csv(file).iloc[:x_len, 1].values
-            data = pd.read_csv(file).iloc[:x_len, 0].values
+            if target_marker == 'A':
+                data = pd.read_csv(file).iloc[:max_len, 0].values
+            if target_marker == 'B':
+                data = pd.read_csv(file).iloc[:max_len, 1].values
 
-            conversion_factor = conversion_factors.get(date, {}).get(view, 1).get(fault_type, 1)
+            if int(date) < 1100:
+                conversion_factor = conversion_factors.get(date, {}).get(view, 1)
+            elif int(date) == 1105:
+                conversion_factor = conversion_factors.get(date, {}).get(view, 1).get(fault_type, 1)
+            else:
+                conversion_factor = conversion_factors.get(date, {}).get(view, 1).get(target_marker, 1)
 
             data = data * conversion_factor
+            data -= np.mean(data)
+
             df[axis].append(np.array(data))
 
     return pd.DataFrame(df)
@@ -127,78 +112,100 @@ def sliding_window_augmentation(data, window_size=2048, overlap=1024):
     return np.array(augmented_data)
 
 
-def augment_dataframe(df: pd.DataFrame, target_axis: str, sample_size: int, overlap: int) -> pd.DataFrame:
+def augment_dataframe(
+        df: pd.DataFrame, target_axes: list, sample_size: int = 2048, overlap: int = 1024
+        ) -> pd.DataFrame:
     """
-    주어진 DataFrame에 대해 슬라이딩 윈도우 방식으로 데이터를 증강하는 함수.
+    주어진 데이터프레임에서 여러 축(target_axes)의 데이터를 슬라이딩 윈도우 기법으로 증강하여 새로운 데이터프레임을 생성
 
     Parameters
     ----------
     df : pd.DataFrame
-        원본 데이터프레임으로, 각 샘플에 대한 축(target_axis) 값과 고장 유형(fault_type)을 포함.
-    target_axis : str
-        데이터프레임에서 증강을 수행할 축을 지정하는 열 이름. x, y, z 중 하나를 선택하면 되지만,
-        본 프로젝트는 z축 방향의 데이터를 사용하기로 했으므로 'z'를 입력해야 함.
-    sample_size : int
-        각 샘플의 크기 (윈도우 크기)
-    overlap : int
-        겹치는 샘플 수를 지정
-
-    Returns
-    -------
-    augmented_df : pd.DataFrame
-        증강된 데이터프레임으로, 각 샘플을 슬라이딩 윈도우 방식으로 나눈 후 고장 유형(fault_type)과 함께 반환.
-    """
-    augmented_data = []
-    augmented_fault_types = []  # 고장 유형을 따로 저장할 리스트
-
-    for i, sample in enumerate(df[target_axis]):
-        augmented_samples = sliding_window_augmentation(sample, window_size=sample_size, overlap=overlap)
-        augmented_data.extend(augmented_samples)  
-        augmented_fault_types.extend([df['fault_type'].iloc[i]] * len(augmented_samples))  # 해당 샘플의 fault_type 반복 저장
-
-    augmented_df = pd.DataFrame({
-        'fault_type': augmented_fault_types,  # 고장 유형이 반복된 리스트 사용
-        target_axis: augmented_data
-    })
-
-    return augmented_df
-
-
-def add_rms_peak(df : pd.DataFrame, target_axis: str) -> pd.DataFrame:
-    """
-    주어진 데이터프레임에 대해 지정된 축(axis) 값에 대해 RMS(Root Mean Square)와 Peak 값을 계산하여 추가하는 함수.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        RMS와 Peak 값을 추가할 데이터프레임
-    target_axis : str
-        RMS와 Peak 값을 계산할 데이터가 포함된 열 이름. 
-        본 프로젝트는 z축 방향의 데이터를 사용하기로 했으므로 'z'를 입력해야 함.
+        원본 데이터프레임. 고장 유형('fault_type') 및 여러 축 데이터(target_axes)를 포함해야 함.
+    target_axes : list
+        증강을 수행할 데이터 축의 이름 리스트. 예: ['x', 'z']
+    sample_size : int, optional
+        슬라이딩 윈도우의 크기(샘플 단위), 기본값은 2048.
+    overlap : int, optional
+        슬라이딩 윈도우의 오버랩 크기(샘플 단위), 기본값은 1024.
 
     Returns
     -------
     pd.DataFrame
-        RMS와 Peak 값을 계산하여 추가한 새로운 데이터프레임을 반환. 
-        기존 데이터프레임에 'rms'와 'peak'라는 열이 추가됨.
+        증강된 데이터프레임. 각 고장 유형과 여러 증강된 축 데이터가 포함됨.
+    """
+    augmented_data = {axis: [] for axis in target_axes}  
+    augmented_fault_types = [] 
+
+    for i in range(len(df)):
+        fault_type = df['fault_type'].iloc[i]
+        num_windows = None 
+
+        for axis in target_axes:
+            sample = df[axis].iloc[i]
+            augmented_samples = sliding_window_augmentation(
+                sample, window_size=sample_size, overlap=overlap
+            )
+            augmented_data[axis].extend(augmented_samples)
+
+            if num_windows is None:
+                num_windows = len(augmented_samples)
+            elif num_windows != len(augmented_samples):
+                raise ValueError("All axes must produce the same number of windows.")
+
+        augmented_fault_types.extend([fault_type] * num_windows)
+
+    augmented_df = {'fault_type': augmented_fault_types}
+    for axis, data in augmented_data.items():
+        augmented_df[axis] = data
+
+    return pd.DataFrame(augmented_df)
+
+
+def calculate_statistics(values):
+    """
+    통계값을 계산해주는 함수
+    """
+    peak = np.max(np.abs(values))
+    average = np.mean(values)
+    rms = np.sqrt(np.mean(values**2))
+    crest_factor = peak / rms
+    return peak, average, rms, crest_factor
+
+
+def add_statistics(df : pd.DataFrame, target_axis: str) -> pd.DataFrame:
+    """
+    주어진 데이터프레임에서 특정 축에 대해 통계적 특성을 계산하여
+    이를 데이터프레임에 새로운 열로 추가하는 함수
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        통계 값을 추가할 원본 데이터프레임. 반드시 target_axis에 해당하는 데이터가 포함되어야 함.
+    target_axis : str
+        통계 값을 계산할 대상 축의 이름. e.g. 'x', 'z'
+
+    Returns
+    -------
+    pd.DataFrame
+        통계 값이 추가된 데이터프레임. 
     """
     rms_values = []
     peak_values = []
     avg_values = []
-    cf_values = []
+    crest_factor_values = []
 
     for sample in df[target_axis]:
         peak, average, rms, crest_factor = calculate_statistics(sample)
         rms_values.append(rms)
         peak_values.append(peak)
         avg_values.append(average)
-        cf_values.append(crest_factor)
+        crest_factor_values.append(crest_factor)
 
-    # 데이터프레임에 RMS와 Peak 열 추가
     df['rms'] = rms_values
     df['peak'] = peak_values
-    df['avg'] = avg_values
-    df['crest_factor'] = cf_values
+    df['average'] = avg_values
+    df['crest_factor'] = crest_factor_values
 
     return df
 
@@ -212,7 +219,7 @@ def get_data_label(df: pd.DataFrame, target: str) -> Tuple[np.ndarray, np.ndarra
     df : pd.DataFrame
         데이터프레임으로, 'fault_type' 컬럼과 주어진 target 컬럼을 포함.
     target : str
-        분석할 데이터가 포함된 컬럼 이름. 해당 컬럼의 값들이 특징값(X)로 사용됨. 'z', 'rms', 'peak' 중 하나여야 함.
+        분석할 데이터가 포함된 컬럼 이름. 해당 컬럼의 값들이 특징값(X)로 사용됨.
     
     Returns
     -------
@@ -225,8 +232,6 @@ def get_data_label(df: pd.DataFrame, target: str) -> Tuple[np.ndarray, np.ndarra
     Y = df['fault_type_encoded'].values
     
     arr = np.vstack(df[target]) 
-    # for i in range(len(label_encoder.classes_)):
-    #     print(f"{i}: {label_encoder.classes_[i]}")
     X = np.hstack([arr])
 
     return X, Y

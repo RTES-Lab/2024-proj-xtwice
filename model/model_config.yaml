@@ -1,3 +1,5 @@
+seed: 42
+
 output_dir: '../MDPS-vis-master/output'
 model_dir: './model/saved'
 
@@ -5,6 +7,12 @@ axis_to_csv_dic:
   'F': ['x.csv', 'z.csv']
   'S': ['y.csv', 'z.csv']
   'T': ['x.csv', 'y.csv']
+
+label_dic:
+    'H' : 0
+    'B' : 1
+    'IR': 2
+    'OR': 3
 
 conversion_factors:
   {
