@@ -25,6 +25,8 @@ import android.os.Parcel
 import android.os.Parcelable
 import android.util.Log
 import android.widget.Toast
+import android.graphics.Point
+import org.opencv.core.Point as OpenCVPoint
 
 class HSVActivity : AppCompatActivity() {
     companion object {
@@ -53,6 +55,8 @@ class HSVActivity : AppCompatActivity() {
     private var sMax = 255
     private var vMin = 0
     private var vMax = 255
+    private var fps: Float = 30f
+    private var markerPoints: ArrayList<Point> = ArrayList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,6 +72,9 @@ class HSVActivity : AppCompatActivity() {
         roiData?.let {
             Log.d("HSVActivity", "Received ROI Data - Left: ${it.left}, Top: ${it.top}, Right: ${it.right}, Bottom: ${it.bottom}")
         } ?: Log.e("HSVActivity", "ROI Data is null")
+
+        // FPS 값을 Float로 받기
+        fps = intent.getFloatExtra("fps", 30f)
 
         loadAndProcessImage(videoUri)
         initializeSeekBars()
@@ -220,31 +227,16 @@ class HSVActivity : AppCompatActivity() {
 
     private fun setupConfirmButton() {
         confirmButton.setOnClickListener {
-            // AlertDialog로 HSV 범위 값 표시
-            androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("선택된 HSV 범위")
-                .setMessage("""
-                    H: $hMin - $hMax
-                    S: $sMin - $sMax
-                    V: $vMin - $vMax
-                    
-                    이 값으로 선택하시겠습니까?
-                """.trimIndent())
-                .setPositiveButton("확인") { _, _ ->
-                    // MarkerCenterActivity로 전환하면서 데이터 전달
-                    val intent = Intent(this, MarkerCenterActivity::class.java).apply {
-                        // HSV 범위 전달
-                        putExtra("hsvRange", HSVRange(hMin, hMax, sMin, sMax, vMin, vMax))
-                        // ROI 데이터 전달
-                        putExtra("roiData", roiData)
-                        // 비디오 URI 전달
-                        putExtra("videoUri", getIntent().getStringExtra("videoUri"))
-                    }
-                    startActivity(intent)
-                    finish()
-                }
-                .setNegativeButton("취소", null)
-                .show()
+            // HSV 값 선택 후 MarkerCenterActivity로 이동
+            val intent = Intent(this, MarkerCenterActivity::class.java).apply {
+                putExtra("videoUri", getIntent().getStringExtra("videoUri"))
+                putExtra("roiData", roiData)
+                putExtra("hsvRange", HSVRange(hMin, hMax, sMin, sMax, vMin, vMax))
+                putExtra("fps", intent.getFloatExtra("fps", 30f))
+            }
+            Log.d("HSVActivity", "MarkerCenterActivity로 전달하는 fps 값: ${intent.getFloatExtra("fps", 30f)}")
+            startActivity(intent)
+            finish()
         }
     }
 

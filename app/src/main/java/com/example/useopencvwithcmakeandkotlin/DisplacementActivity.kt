@@ -35,6 +35,10 @@ import android.widget.ImageView
 import org.opencv.android.Utils
 
 class DisplacementActivity : AppCompatActivity() {
+    companion object {
+        const val DEFAULT_FPS = 30f
+    }
+
     private lateinit var videoUri: String
     private lateinit var roiData: ROIData
     private lateinit var hsvRange: HSVRange
@@ -52,27 +56,55 @@ class DisplacementActivity : AppCompatActivity() {
         statusTextView = findViewById(R.id.statusTextView)
         firstFrameImageView = findViewById(R.id.firstFrameImageView)
 
-        // 데이터 받기
+        // 데이터 받기 - null 체크 추가
         videoUri = intent.getStringExtra("videoUri") ?: ""
-        roiData = intent.getParcelableExtra("roiData")!!
-        hsvRange = intent.getParcelableExtra("hsvRange")!!
-        markerPoints = intent.getParcelableArrayListExtra("markerPoints")!!
-        fps = intent.getFloatExtra("fps", 30f)
+        roiData = intent.getParcelableExtra("roiData") 
+            ?: throw IllegalStateException("ROI 데이터가 없습니다")
+        hsvRange = intent.getParcelableExtra("hsvRange") 
+            ?: throw IllegalStateException("HSV 범위 데이터가 없습니다")
+        markerPoints = intent.getParcelableArrayListExtra("markerPoints") 
+            ?: throw IllegalStateException("마커 포인트 데이터가 없습니다")
+        fps = intent.getFloatExtra("fps", DEFAULT_FPS)
 
+        // 로그 추가
         Log.d("DisplacementActivity", """
-            HSV 범위 값:
-            H: ${hsvRange.hMin} ~ ${hsvRange.hMax}
-            S: ${hsvRange.sMin} ~ ${hsvRange.sMax}
-            V: ${hsvRange.vMin} ~ ${hsvRange.vMax}
+            전달받은 데이터:
+            - videoUri: $videoUri
+            - roiData: $roiData
+            - hsvRange: $hsvRange
+            - markerPoints: $markerPoints
+            - fps: $fps
         """.trimIndent())
+
+        // 백그라운드 작업 시작 전에 데이터 유효성 검사
+        if (videoUri.isEmpty()) {
+            Toast.makeText(this, "비디오 URI가 없습니다", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
 
         // 백그라운드에서 변위 측정 실행
         Thread {
-            measureDisplacementAndSaveCSV()
+            try {
+                measureDisplacementAndSaveCSV()
+            } catch (e: Exception) {
+                Log.e("DisplacementActivity", "변위 측정 중 오류 발생", e)
+                runOnUiThread {
+                    Toast.makeText(this, "오류가 발생했습니다: ${e.message}", Toast.LENGTH_LONG).show()
+                    finish()
+                }
+            }
         }.start()
     }
 
     private fun measureDisplacementAndSaveCSV() {
+        val fps = intent.getFloatExtra("fps", DEFAULT_FPS)
+        if (fps == DEFAULT_FPS) {
+            runOnUiThread {
+                Toast.makeText(this, "FPS 값을 찾을 수 없어 기본값(30)을 사용합니다", Toast.LENGTH_SHORT).show()
+            }
+        }
+
         // URI를 실제 파일 경로로 변환
         val realPath = getRealPathFromURI(Uri.parse(videoUri))
         Log.d("DisplacementActivity", """
@@ -91,23 +123,31 @@ class DisplacementActivity : AppCompatActivity() {
         }
 
         val videoCapture = VideoCapture(realPath)
-        val frame = Mat()
-        val displacements = mutableListOf<Pair<Float, Float>>()
+        
+        // FPS 설정 추가
+        videoCapture.set(Videoio.CAP_PROP_FPS, fps.toDouble())  // Float를 Double로 변환
         
         // 비디오 정보 로깅
         val totalFrames = videoCapture.get(Videoio.CAP_PROP_FRAME_COUNT).toInt()
         val videoFps = videoCapture.get(Videoio.CAP_PROP_FPS)
-        val duration = totalFrames / videoFps
+        val duration = totalFrames / fps // 원래는 videoFps
         
         Log.d("DisplacementActivity", """
-            비디오 정보:
+            비디오 설정 정보:
             - 총 프레임 수: $totalFrames
-            - FPS: $videoFps
+            - 원본 FPS: ${videoCapture.get(Videoio.CAP_PROP_FPS)}
+            - 설정된 FPS: $fps
             - 예상 재생 시간: $duration 초
-            - 초기 마커 위치: (${markerPoints[0].x}, ${markerPoints[0].y})
-            - ROI: (${roiData.left}, ${roiData.top}, ${roiData.right}, ${roiData.bottom})
         """.trimIndent())
 
+        // FPS 설정이 제대로 적용되었는지 확인
+        if (videoCapture.get(Videoio.CAP_PROP_FPS).toFloat() != fps) {  // Double을 Float로 변환하여 비교
+            Log.w("DisplacementActivity", "FPS 설정이 적용되지 않았습니다")
+        }
+
+        val frame = Mat()
+        val displacements = mutableListOf<Pair<Float, Float>>()
+        
         // 초기 마커 위치
         val initialX = markerPoints[0].x
         val initialY = markerPoints[0].y
@@ -115,21 +155,17 @@ class DisplacementActivity : AppCompatActivity() {
 
         // 첫 프레임 읽기
         if (videoCapture.read(frame)) {
-            // 프레임 회전
-            val rotatedFrame = Mat()
-            Core.rotate(frame, rotatedFrame, Core.ROTATE_90_CLOCKWISE)
+            // 프전 코드 제거
+            val displayFrame = frame.clone()
             
-            // BGR을 RGB로 변환 (추가)
-            Imgproc.cvtColor(rotatedFrame, rotatedFrame, Imgproc.COLOR_BGR2RGB)
+            // BGR을 RGB로 변환
+            Imgproc.cvtColor(displayFrame, displayFrame, Imgproc.COLOR_BGR2RGB)
             
             // ROI 영역 표시를 위한 프레임 복사
-            val displayFrame = rotatedFrame.clone()
-            
-            // ROI 추출 및 표시
-            val safeTop = roiData.top.coerceIn(0, rotatedFrame.rows())
-            val safeBottom = roiData.bottom.coerceIn(0, rotatedFrame.rows())
-            val safeLeft = roiData.left.coerceIn(0, rotatedFrame.cols())
-            val safeRight = roiData.right.coerceIn(0, rotatedFrame.cols())
+            val safeTop = roiData.top.coerceIn(0, frame.rows())
+            val safeBottom = roiData.bottom.coerceIn(0, frame.rows())
+            val safeLeft = roiData.left.coerceIn(0, frame.cols())
+            val safeRight = roiData.right.coerceIn(0, frame.cols())
             
             // ROI 영역 표시 (빨간색 사각형)
             Imgproc.rectangle(
@@ -153,7 +189,6 @@ class DisplacementActivity : AppCompatActivity() {
             }
             
             // 메모리 해제
-            rotatedFrame.release()
             displayFrame.release()
         }
         
@@ -165,13 +200,9 @@ class DisplacementActivity : AppCompatActivity() {
                 continue
             }
             
-            // 프레임 회전
-            val rotatedFrame = Mat()
-            Core.rotate(frame, rotatedFrame, Core.ROTATE_90_CLOCKWISE)
-            
             // ROI 범위 검증 추가
-            val frameHeight = rotatedFrame.rows()  // 1080
-            val frameWidth = rotatedFrame.cols()   // 1920
+            val frameHeight = frame.rows()
+            val frameWidth = frame.cols()
             
             Log.d("DisplacementActivity", """
                 프레임 정보:
@@ -187,7 +218,7 @@ class DisplacementActivity : AppCompatActivity() {
             val safeRight = roiData.right.coerceIn(0, frameWidth)
             
             // 안전한 ROI 범위로 서브매트릭스 추출
-            val roi = rotatedFrame.submat(safeTop, safeBottom, safeLeft, safeRight)
+            val roi = frame.submat(safeTop, safeBottom, safeLeft, safeRight)
             
             try {
                 // HSV 변환
@@ -270,7 +301,7 @@ class DisplacementActivity : AppCompatActivity() {
             }
 
             // 메모리 해제
-            rotatedFrame.release()
+            roi.release()
 
             // 진행 상황 업데트
             val progress = (currentFrame.toFloat() / totalFrames * 100).toInt()
@@ -301,6 +332,19 @@ class DisplacementActivity : AppCompatActivity() {
                 statusTextView.text = "오류: 변위 데이터 없음"
                 Toast.makeText(this, "변위 데이터를 측정하지 못했습니다", Toast.LENGTH_LONG).show()
             }
+        }
+
+        // 변위 추출 완료 후 요약 정보 로그 출력
+        Log.d("DisplacementActivity", """
+            변위 추출 완료:
+            - 총 프레임 수: $totalFrames
+            - 실제 FPS: $videoFps
+            - 설정된 FPS: $fps
+            - 측정된 변위 데이터 수: ${displacements.size}
+        """.trimIndent())
+
+        runOnUiThread {
+            Toast.makeText(this, "변위 측정이 완료되었습니다.", Toast.LENGTH_SHORT).show()
         }
     }
 

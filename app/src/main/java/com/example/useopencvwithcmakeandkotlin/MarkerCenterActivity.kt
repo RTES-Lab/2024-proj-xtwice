@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Parcel
 import android.os.Parcelable
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
@@ -213,14 +214,18 @@ class MarkerCenterActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // 다음 DisplacementActivity로 데이터 전달
+            // DisplacementActivity로 데이터 전달
             val intent = Intent(this, DisplacementActivity::class.java).apply {
                 putExtra("videoUri", getIntent().getStringExtra("videoUri"))
                 putExtra("roiData", getIntent().getParcelableExtra<ROIData>("roiData"))
                 putExtra("hsvRange", getIntent().getParcelableExtra<HSVRange>("hsvRange"))
                 putExtra("markerPoints", ArrayList(markerCoordinates))
-                putExtra("fps", getIntent().getParcelableExtra<FPS>("fps")?.value ?: 30f)
+                putExtra("fps", getIntent().getFloatExtra("fps", 30f))
             }
+            
+            // fps 값 로그 추가
+            Log.d("MarkerCenterActivity", "DisplacementActivity로 전달하는 fps 값: ${getIntent().getFloatExtra("fps", 30f)}")
+            
             startActivity(intent)
             finish()
         }

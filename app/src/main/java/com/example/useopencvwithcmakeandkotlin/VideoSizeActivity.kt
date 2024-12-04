@@ -12,6 +12,7 @@ import com.example.useopencvwithcmakeandkotlin.ROIActivity
 class VideoSizeActivity : AppCompatActivity() {
     private lateinit var widthEditText: EditText
     private lateinit var heightEditText: EditText
+    private lateinit var fpsEditText: EditText
     private lateinit var confirmButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -20,6 +21,7 @@ class VideoSizeActivity : AppCompatActivity() {
 
         widthEditText = findViewById(R.id.widthEditText)
         heightEditText = findViewById(R.id.heightEditText)
+        fpsEditText = findViewById(R.id.fpsEditText)
         confirmButton = findViewById(R.id.confirmButton)
 
         val videoUri = intent.getStringExtra("videoUri")
@@ -27,17 +29,20 @@ class VideoSizeActivity : AppCompatActivity() {
         confirmButton.setOnClickListener {
             val width = widthEditText.text.toString().toIntOrNull()
             val height = heightEditText.text.toString().toIntOrNull()
+            val fps = fpsEditText.text.toString().toFloatOrNull()
 
-            if (width != null && height != null && width > 0 && height > 0) {
+            if (width != null && height != null && fps != null && 
+                width > 0 && height > 0 && fps > 0) {
                 val intent = Intent(this, ROIActivity::class.java).apply {
                     putExtra("videoUri", videoUri)
                     putExtra("videoWidth", width)
                     putExtra("videoHeight", height)
+                    putExtra("fps", fps)
                 }
                 startActivity(intent)
                 finish()
             } else {
-                Toast.makeText(this, "올바른 크기를 입력해주세요", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "올바른 값을 입력해주세요", Toast.LENGTH_SHORT).show()
             }
         }
     }

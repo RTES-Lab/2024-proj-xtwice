@@ -306,7 +306,9 @@ class ROIActivity : AppCompatActivity() {
                 val intent = Intent(this, HSVActivity::class.java).apply {
                     putExtra("roiData", roiData)
                     putExtra("videoUri", getIntent().getStringExtra("videoUri"))
+                    putExtra("fps", intent.getFloatExtra("fps", 30f))
                 }
+                Log.d("ROIActivity", "전달하는 fps 값: ${intent.getFloatExtra("fps", 30f)}")
                 startActivity(intent)
                 finish()
             } else {
