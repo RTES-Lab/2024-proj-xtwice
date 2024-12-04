@@ -111,6 +111,11 @@ class ROIActivity : AppCompatActivity() {
                         MotionEvent.ACTION_DOWN -> {
                             startX = bitmapCoords.x
                             startY = bitmapCoords.y
+                            Log.d("ROIActivity", """
+                                ACTION_DOWN Event:
+                                Raw touch - x: ${event.x}, y: ${event.y}
+                                Transformed to - x: $startX, y: $startY
+                            """.trimIndent())
                             currentRect = null
                             cropButton.isEnabled = false
                             true
@@ -133,36 +138,60 @@ class ROIActivity : AppCompatActivity() {
     }
 
     private fun getBitmapCoordinates(imageView: ImageView, event: MotionEvent): PointF {
+        // 원본 터치 좌표 로깅
+        Log.d("ROIActivity", """
+            Touch Coordinates:
+            Raw touch - x: ${event.x}, y: ${event.y}
+            Raw touch (getRawX/Y) - x: ${event.rawX}, y: ${event.rawY}
+        """.trimIndent())
+
         val matrix = Matrix()
         imageView.imageMatrix.invert(matrix)
 
+        // 이미지뷰 매트릭스 정보 로깅
+        val matrixValues = FloatArray(9)
+        imageView.imageMatrix.getValues(matrixValues)
+        Log.d("ROIActivity", """
+            ImageView Matrix:
+            Scale X: ${matrixValues[Matrix.MSCALE_X]}
+            Scale Y: ${matrixValues[Matrix.MSCALE_Y]}
+            Translate X: ${matrixValues[Matrix.MTRANS_X]}
+            Translate Y: ${matrixValues[Matrix.MTRANS_Y]}
+        """.trimIndent())
+
         val touchPoint = floatArrayOf(event.x, event.y)
         matrix.mapPoints(touchPoint)
+
+        // 변환된 좌표 로깅
+        Log.d("ROIActivity", """
+            Transformed Coordinates:
+            Before transform - x: ${event.x}, y: ${event.y}
+            After transform - x: ${touchPoint[0]}, y: ${touchPoint[1]}
+        """.trimIndent())
 
         return PointF(touchPoint[0], touchPoint[1])
     }
 
     // 이미지뷰 내의 실제 이미지 영역을 계산하는 함수 추가
     private fun getImageBounds(imageView: ImageView): RectF {
-        val drawable = imageView.drawable ?: return RectF()
-        val matrix = imageView.imageMatrix
+        val viewWidth = imageView.width.toFloat()  // 1080
         
-        val bounds = RectF(0f, 0f, 
-            drawable.intrinsicWidth.toFloat(),
-            drawable.intrinsicHeight.toFloat())
-            
-        matrix.mapRect(bounds)
+        // 원본 비디오 비율 유지하면서 크기 계산
+        val originalRatio = originalBitmap?.width?.toFloat()!! / originalBitmap?.height?.toFloat()!!  // 1920/1080
+        val scaledHeight = viewWidth / originalRatio  // 1080 / (1920/1080) ≈ 607.5
+        
+        // 이미지가 화면 중앙에 오도록 top 위치 계산
+        val topMargin = (imageView.height - scaledHeight) / 2
+        
+        Log.d("ROIActivity", """
+            Scaling Calculation:
+            View Width: $viewWidth
+            Original Ratio: $originalRatio
+            Scaled Height: $scaledHeight
+            Top Margin: $topMargin
+        """.trimIndent())
 
-        // 이미지뷰의 크기와 이미지의 크기를 비교하여 여백 계산
-        val viewWidth = imageView.width.toFloat()
-        val viewHeight = imageView.height.toFloat()
-        val imageWidth = bounds.width()
-        val imageHeight = bounds.height()
-
-        val leftPadding = (viewWidth - imageWidth) / 2
-        val topPadding = (viewHeight - imageHeight) / 2
-
-        return RectF(leftPadding, topPadding, leftPadding + imageWidth, topPadding + imageHeight)
+        return RectF(0f, topMargin, viewWidth, topMargin + scaledHeight)
     }
 
     private fun drawRect(endX: Float, endY: Float) {
@@ -173,6 +202,16 @@ class ROIActivity : AppCompatActivity() {
         val top = minOf(startY, endY)
         val right = maxOf(startX, endX)
         val bottom = maxOf(startY, endY)
+
+        // ROI 계산 과정 로깅
+        Log.d("ROIActivity", """
+            ROI Calculation:
+            Start point - x: $startX, y: $startY
+            End point - x: $endX, y: $endY
+            Calculated ROI - left: $left, top: $top, right: $right, bottom: $bottom
+            ImageView size - width: ${imageView.width}, height: ${imageView.height}
+            Original bitmap size - width: ${originalBitmap?.width}, height: ${originalBitmap?.height}
+        """.trimIndent())
 
         currentRect = RectF(left, top, right, bottom)
         currentRect?.let { rect ->
@@ -248,44 +287,18 @@ class ROIActivity : AppCompatActivity() {
 
     private fun finishROI() {
         currentRect?.let { rect ->
-            // 이미지뷰의 실제 이미지 영역 계산
-            val imageRect = getImageBounds(imageView)
-            
-            // 디버깅을 위한 상세 로그 추가
+            // 좌표를 정수로 변환
+            val left = rect.left.toInt()
+            val top = rect.top.toInt()
+            val right = rect.right.toInt()
+            val bottom = rect.bottom.toInt()
+
+            // 디버깅을 위한 로그
             Log.d("ROIActivity", """
-                Debug Info:
-                Original Image Size: ${originalBitmap?.width} x ${originalBitmap?.height}
-                ImageView Size: ${imageView.width} x ${imageView.height}
-                Image Display Rect: ${imageRect.left}, ${imageRect.top}, ${imageRect.right}, ${imageRect.bottom}
-                Selected ROI (Raw): ${rect.left}, ${rect.top}, ${rect.right}, ${rect.bottom}
-                Selected ROI relative to ImageRect:
-                Left: ${rect.left - imageRect.left}
-                Top: ${rect.top - imageRect.top}
-                Right: ${rect.right - imageRect.left}
-                Bottom: ${rect.bottom - imageRect.top}
-            """.trimIndent())
-
-            // ROI 좌표를 원본 이미지 좌표계로 변환
-            val scaleX = originalBitmap?.width?.toFloat()!! / (imageRect.right - imageRect.left)
-            val scaleY = originalBitmap?.height?.toFloat()!! / (imageRect.bottom - imageRect.top)
-
-            // 이미지뷰 내에서의 상대적인 위치 계산
-            val relativeLeft = rect.left - imageRect.left
-            val relativeTop = rect.top - imageRect.top
-            val relativeRight = rect.right - imageRect.left
-            val relativeBottom = rect.bottom - imageRect.top
-
-            // 원본 이미지 좌표로 변환
-            val left = (relativeLeft * scaleX).toInt().coerceIn(0, originalBitmap?.width ?: 0)
-            val top = (relativeTop * scaleY).toInt().coerceIn(0, originalBitmap?.height ?: 0)
-            val right = (relativeRight * scaleX).toInt().coerceIn(0, originalBitmap?.width ?: 0)
-            val bottom = (relativeBottom * scaleY).toInt().coerceIn(0, originalBitmap?.height ?: 0)
-
-            // 변환된 좌표 로그
-            Log.d("ROIActivity", """
-                Transformed Coordinates:
-                Scale factors: scaleX=$scaleX, scaleY=$scaleY
-                Final ROI: Left=$left, Top=$top, Right=$right, Bottom=$bottom
+                ROI Coordinates:
+                Original rect: $rect
+                Converted ROI: Left=$left, Top=$top, Right=$right, Bottom=$bottom
+                Original bitmap size: ${originalBitmap?.width} x ${originalBitmap?.height}
             """.trimIndent())
 
             if (left < right && top < bottom) {

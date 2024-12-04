@@ -82,36 +82,20 @@ class HSVActivity : AppCompatActivity() {
                 retriever.setDataSource(this, videoUri)
                 originalBitmap = retriever.getFrameAtTime(0)
                 
-                // ROI 데이터 로그 출력
                 roiData?.let { roi ->
-                    Log.d("HSVActivity", """
-                        Loading image with ROI:
-                        Original bitmap size: ${originalBitmap?.width} x ${originalBitmap?.height}
-                        ROI coordinates: Left=${roi.left}, Top=${roi.top}, Right=${roi.right}, Bottom=${roi.bottom}
-                    """.trimIndent())
-
-                    // ROI 유효성 검사
-                    if (roi.left < roi.right && roi.top < roi.bottom &&
-                        roi.right <= (originalBitmap?.width ?: 0) &&
-                        roi.bottom <= (originalBitmap?.height ?: 0)) {
-                        
-                        val croppedBitmap = Bitmap.createBitmap(
-                            originalBitmap!!,
-                            roi.left,
-                            roi.top,
-                            roi.right - roi.left,
-                            roi.bottom - roi.top
-                        )
-                        
-                        matInput = Mat()
-                        Utils.bitmapToMat(croppedBitmap, matInput)
-                        imageView.setImageBitmap(croppedBitmap)
-                    } else {
-                        Log.e("HSVActivity", "Invalid ROI coordinates")
-                        Toast.makeText(this, "잘못된 ROI 좌표입니다", Toast.LENGTH_SHORT).show()
-                    }
-                } ?: Log.e("HSVActivity", "ROI data is null")
-                
+                    val croppedBitmap = Bitmap.createBitmap(
+                        originalBitmap!!,
+                        roi.left,
+                        roi.top,
+                        roi.right - roi.left,
+                        roi.bottom - roi.top
+                    )
+                    
+                    matInput = Mat()
+                    Utils.bitmapToMat(croppedBitmap, matInput)
+                    
+                    imageView.setImageBitmap(croppedBitmap)
+                }
             } catch (e: Exception) {
                 Log.e("HSVActivity", "Error processing image: ${e.message}")
                 e.printStackTrace()
@@ -194,34 +178,44 @@ class HSVActivity : AppCompatActivity() {
 
     private fun updateImageWithHSVFilter() {
         matInput?.let { mat ->
-            val hsvMat = Mat()
-            val resultMat = Mat()
+            try {
+                val hsvMat = Mat()
+                val resultMat = Mat()
+                
+                // RGB에서 BGR로 변환 후 HSV로 변환
+                val bgrMat = Mat()
+                Imgproc.cvtColor(mat, bgrMat, Imgproc.COLOR_RGB2BGR)
+                Imgproc.cvtColor(bgrMat, hsvMat, Imgproc.COLOR_BGR2HSV)
 
-            // Imgproc.cvtColor(mat, hsvMat, Imgproc.COLOR_BGRHSV)
-            Imgproc.cvtColor(mat, hsvMat, Imgproc.COLOR_RGB2HSV)
+                val lowerBound = Scalar(hMin.toDouble(), sMin.toDouble(), vMin.toDouble())
+                val upperBound = Scalar(hMax.toDouble(), sMax.toDouble(), vMax.toDouble())
+                Core.inRange(hsvMat, lowerBound, upperBound, resultMat)
 
-            val lowerBound = Scalar(hMin.toDouble(), sMin.toDouble(), vMin.toDouble())
-            val upperBound = Scalar(hMax.toDouble(), sMax.toDouble(), vMax.toDouble())
-            Core.inRange(hsvMat, lowerBound, upperBound, resultMat)
+                val filteredMat = Mat()
+                mat.copyTo(filteredMat, resultMat)
 
-            // 원본 이미지에 마스크 적용
-            val filteredMat = Mat()
-            mat.copyTo(filteredMat, resultMat)
+                val resultBitmap = Bitmap.createBitmap(
+                    filteredMat.cols(),
+                    filteredMat.rows(),
+                    Bitmap.Config.ARGB_8888
+                )
+                Utils.matToBitmap(filteredMat, resultBitmap)
+                
+                runOnUiThread {
+                    imageView.setImageBitmap(resultBitmap)
+                }
 
-            // 결과를 화면에 표시
-            val resultBitmap = Bitmap.createBitmap(
-                filteredMat.cols(),
-                filteredMat.rows(),
-                Bitmap.Config.ARGB_8888
-            )
-            Utils.matToBitmap(filteredMat, resultBitmap)
-            imageView.setImageBitmap(resultBitmap)
-
-            // 메모리 해제
-            hsvMat.release()
-            resultMat.release()
-            filteredMat.release()
-        }
+                // 메모리 해제
+                bgrMat.release()
+                hsvMat.release()
+                resultMat.release()
+                filteredMat.release()
+                
+            } catch (e: Exception) {
+                Log.e("HSVActivity", "Error in HSV filter: ${e.message}")
+                e.printStackTrace()
+            }
+        } ?: Log.e("HSVActivity", "matInput is null")
     }
 
     private fun setupConfirmButton() {
