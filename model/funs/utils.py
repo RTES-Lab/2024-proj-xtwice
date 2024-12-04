@@ -26,7 +26,7 @@ def load_yaml(config_path: str) -> Box:
     Box 
         Box 개체
     """
-    with open(config_path) as f:
+    with open(config_path, 'r', encoding='utf-8') as f:
         config_yaml = yaml.load(f, Loader=yaml.FullLoader)
         config = Box(config_yaml)
 
@@ -65,30 +65,54 @@ def get_peak_rms_hist_pic(df: pd.DataFrame, save_path: str):
     
     plt.figure(figsize=(20, 15))
     
-    # Peak 히스토그램 (첫 번째 subplot)
-    plt.subplot(2, 1, 1)
+    # 첫 번째 subplot: Peak 히스토그램
+    plt.subplot(2, 2, 1)
     for fault_type in fault_type_list:
         subset = df[df['fault_type'] == fault_type]
         plt.hist(subset['peak'], bins=50, alpha=0.5, label=fault_type)
-    plt.title('Peak Distribution', size=50)  
-    plt.xlabel('Peak [mm]', size=40)  
-    plt.ylabel('Counts', size=40)  
-    plt.xticks(fontsize=30)  
-    plt.yticks(fontsize=30)  
-    plt.legend(fontsize=18, loc='upper right') 
+    plt.title('Peak Distribution', size=40)  
+    plt.xlabel('Peak [mm]', size=30)  
+    plt.ylabel('Counts', size=30)  
+    plt.xticks(fontsize=25)  
+    plt.yticks(fontsize=25)  
+    plt.legend(fontsize=25, loc='upper right') 
 
-    # RMS 히스토그램 (두 번째 subplot)
-    plt.subplot(2, 1, 2)
+    # 두 번째 subplot: RMS 히스토그램
+    plt.subplot(2, 2, 2)
     for fault_type in fault_type_list:
         subset = df[df['fault_type'] == fault_type]
         plt.hist(subset['rms'], bins=50, alpha=0.5, label=fault_type)
-    plt.title('RMS Distribution', size=50)  
-    plt.xlabel('RMS [mm]', size=40)  
-    plt.ylabel('Counts', size=40)  
-    plt.xticks(fontsize=30)  
-    plt.yticks(fontsize=30)  
-    plt.legend(fontsize=18, loc='upper right') 
-    
+    plt.title('RMS Distribution', size=40)  
+    plt.xlabel('RMS [mm]', size=30)  
+    plt.ylabel('Counts', size=30)  
+    plt.xticks(fontsize=25)  
+    plt.yticks(fontsize=25)  
+    plt.legend(fontsize=25, loc='upper right') 
+
+    # 세 번째 subplot: Average 히스토그램
+    plt.subplot(2, 2, 3)
+    for fault_type in fault_type_list:
+        subset = df[df['fault_type'] == fault_type]
+        plt.hist(subset['avg'], bins=50, alpha=0.5, label=fault_type)
+    plt.title('Average Distribution', size=30)  
+    plt.xlabel('Average [mm]', size=30)  
+    plt.ylabel('Counts', size=30)  
+    plt.xticks(fontsize=25)  
+    plt.yticks(fontsize=25)  
+    plt.legend(fontsize=25, loc='upper right') 
+
+    # 네 번째 subplot: Crest factor 히스토그램
+    plt.subplot(2, 2, 4)
+    for fault_type in fault_type_list:
+        subset = df[df['fault_type'] == fault_type]
+        plt.hist(subset['crest_factor'], bins=50, alpha=0.5, label=fault_type)
+    plt.title('Crest factor Distribution', size=40)  
+    plt.xlabel('Crest factor [mm]', size=30)  
+    plt.ylabel('Counts', size=30)  
+    plt.xticks(fontsize=25)  
+    plt.yticks(fontsize=25)  
+    plt.legend(fontsize=25, loc='upper right') 
+
     # 레이아웃 조정 및 저장
     plt.tight_layout()
     plt.savefig(save_path)

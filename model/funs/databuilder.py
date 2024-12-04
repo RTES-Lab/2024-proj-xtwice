@@ -57,14 +57,20 @@ def make_dataframe(config: Box, rpm: str, directory: str) -> pd.DataFrame:
     }
 
     # 1105 중 rpm 1200인 데이터만 사용
-    filtered_dirs = [
-        os.path.join(directory, d) 
-        for d in os.listdir(directory) 
-        if rpm in d and os.path.isdir(os.path.join(directory, d))
-    ]
+    if rpm:
+        filtered_dirs = [
+            os.path.join(directory, d) 
+            for d in os.listdir(directory) 
+            if rpm in d and os.path.isdir(os.path.join(directory, d))
+        ]
+    else:
+        filtered_dirs = [
+            os.path.join(directory, d) 
+            for d in os.listdir(directory) 
+        ]
 
     # 가장 작은 csv 파일 길이에 맞춤
-    x_len = 66420
+    x_len = 1000000
     conversion_factors = config.conversion_factors
 
     for sub_dirs in tqdm(sorted(filtered_dirs)):
@@ -74,6 +80,7 @@ def make_dataframe(config: Box, rpm: str, directory: str) -> pd.DataFrame:
         view = parts[-1]
         fault_type = parts[-2]
         bearing_type = parts[-4]
+        date = date[12:]
 
         df['fault_type'].append(fault_type)
         df['label'].append(label_dic[fault_type])
@@ -120,7 +127,7 @@ def sliding_window_augmentation(data, window_size=2048, overlap=1024):
     return np.array(augmented_data)
 
 
-def augment_dataframe(df : pd.DataFrame, target_axis: str, sample_size: int, overlap: int) -> pd.DataFrame:
+def augment_dataframe(df: pd.DataFrame, target_axis: str, sample_size: int, overlap: int) -> pd.DataFrame:
     """
     주어진 DataFrame에 대해 슬라이딩 윈도우 방식으로 데이터를 증강하는 함수.
 
@@ -142,13 +149,15 @@ def augment_dataframe(df : pd.DataFrame, target_axis: str, sample_size: int, ove
         증강된 데이터프레임으로, 각 샘플을 슬라이딩 윈도우 방식으로 나눈 후 고장 유형(fault_type)과 함께 반환.
     """
     augmented_data = []
+    augmented_fault_types = []  # 고장 유형을 따로 저장할 리스트
 
-    for sample in df[target_axis]:
+    for i, sample in enumerate(df[target_axis]):
         augmented_samples = sliding_window_augmentation(sample, window_size=sample_size, overlap=overlap)
         augmented_data.extend(augmented_samples)  
+        augmented_fault_types.extend([df['fault_type'].iloc[i]] * len(augmented_samples))  # 해당 샘플의 fault_type 반복 저장
 
     augmented_df = pd.DataFrame({
-        'fault_type': np.repeat(df['fault_type'].values, len(augmented_data) // len(df)),
+        'fault_type': augmented_fault_types,  # 고장 유형이 반복된 리스트 사용
         target_axis: augmented_data
     })
 
@@ -175,15 +184,21 @@ def add_rms_peak(df : pd.DataFrame, target_axis: str) -> pd.DataFrame:
     """
     rms_values = []
     peak_values = []
+    avg_values = []
+    cf_values = []
 
     for sample in df[target_axis]:
         peak, average, rms, crest_factor = calculate_statistics(sample)
         rms_values.append(rms)
         peak_values.append(peak)
+        avg_values.append(average)
+        cf_values.append(crest_factor)
 
     # 데이터프레임에 RMS와 Peak 열 추가
     df['rms'] = rms_values
     df['peak'] = peak_values
+    df['avg'] = avg_values
+    df['crest_factor'] = cf_values
 
     return df
 

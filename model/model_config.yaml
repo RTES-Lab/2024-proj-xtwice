@@ -29,5 +29,5 @@ n_estimators: 100
 max_depth: 10
 
 # 훈련 관련 파라미터
-epochs: 100
+epochs: 50
 batch_size: 128
