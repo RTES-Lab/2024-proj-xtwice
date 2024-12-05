@@ -17,7 +17,7 @@ from funs.draw import get_stat_hist_pic
 import numpy as np
 
 def main(yaml_config, target_config, save_figs=True, save_model=True):
-    set_seed(yaml_config.seed)
+    # set_seed(yaml_config.seed)
 
     directory = os.path.join(yaml_config.output_dir, target_config['date'])
     directory = get_dir_list(directory)
@@ -30,17 +30,21 @@ def main(yaml_config, target_config, save_figs=True, save_model=True):
 
     # 통계값 값 추가
     statistics_df = add_statistics(augmented_df, 'z')
+    
+    feature_list = list(statistics_df.columns)[2:]
+    feature_list.remove('average')
 
     if save_figs:
         # peak, rms distribution 그림 (Optional)
-        get_stat_hist_pic(statistics_df, f'./RMS_and_Peak_distribution.png')
-
+        get_stat_hist_pic(statistics_df, draw_targets=feature_list,
+                          save_path=f'./feature_distribution.png')
+        
     # 데이터, 라벨 얻기
     X, Y = get_data_label(statistics_df, target_config['input_feature'])
     print(f'input feature: {target_config["input_feature"]}')
 
     # 10-fold Cross Validation
-    kf = KFold(n_splits=10, shuffle=True, random_state=yaml_config.seed)
+    kf = KFold(n_splits=10, shuffle=True)
     accuracies = []
     losses = []
 
@@ -112,9 +116,9 @@ if __name__ == "__main__":
         # 'bearing_type': '6204', # optional
         # 'RPM': '1201',          # optional
         # 'axis': 'F',            # optional
-        'input_feature': 'z'  # 필수. 모델 input feature로 사용할 데이터
+        'input_feature': 'all'  # 필수. 모델 input feature로 사용할 데이터
     }
 
     yaml_config = load_yaml('./model_config.yaml')
 
-    main(yaml_config, target_config, save_figs=False, save_model=False)
+    main(yaml_config, target_config, save_figs=True, save_model=False)

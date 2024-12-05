@@ -170,7 +170,20 @@ def calculate_statistics(values):
     average = np.mean(values)
     rms = np.sqrt(np.mean(values**2))
     crest_factor = peak / rms
-    return peak, average, rms, crest_factor
+
+    max_value = np.max(values)
+    minvalue = np.min(values)
+    pk2pk = max_value - minvalue
+
+    s_dividend = np.mean(np.power(values-average, 3))
+    s_divisor = np.power(np.mean(np.power(values-average, 2)), 3/2)
+    skew = s_dividend / s_divisor
+
+    k_dividend = np.mean(np.power(values-average, 4))
+    k_divisor = np.power(np.mean(np.power(values-average, 2)), 2)
+    kurt = k_dividend / k_divisor
+
+    return peak, average, rms, crest_factor, pk2pk, skew, kurt
 
 
 def add_statistics(df : pd.DataFrame, target_axis: str) -> pd.DataFrame:
@@ -194,18 +207,40 @@ def add_statistics(df : pd.DataFrame, target_axis: str) -> pd.DataFrame:
     peak_values = []
     avg_values = []
     crest_factor_values = []
+    pkt_plus_rms_values = []
+    pk2pk_values = []
+    skew_values = []
+    kurt_values = []
+
+    fusion_values = []
+    all_values = []
 
     for sample in df[target_axis]:
-        peak, average, rms, crest_factor = calculate_statistics(sample)
+        peak, average, rms, crest_factor, pk2pk, skew, kurt = calculate_statistics(sample)
         rms_values.append(rms)
         peak_values.append(peak)
         avg_values.append(average)
         crest_factor_values.append(crest_factor)
+        # pkt_plus_rms.append([peak,rms])
+        pkt_plus_rms_values.append(peak+rms)
+        pk2pk_values.append(pk2pk)
+        skew_values.append(skew)
+        kurt_values.append(kurt)
+        fusion_values.append(peak+rms+pk2pk)
+        all_values.append(peak+rms+pk2pk+skew+kurt)
+
 
     df['rms'] = rms_values
     df['peak'] = peak_values
     df['average'] = avg_values
     df['crest_factor'] = crest_factor_values
+    df['pkt_plus_rms'] = pkt_plus_rms_values
+    df['pk2pk'] = pk2pk_values
+    df['skew'] = skew_values
+    df['kurt'] = kurt_values
+
+    df['fusion'] = fusion_values
+    df['all'] = all_values
 
     return df
 
