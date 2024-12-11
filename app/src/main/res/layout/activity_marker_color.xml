@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:gravity="center">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="마커 색상을 선택하세요"
+        android:textSize="20sp"
+        android:layout_marginBottom="32dp"/>
+
+    <Button
+        android:id="@+id/blueButton"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:text="파란색"
+        android:backgroundTint="#2196F3"
+        android:layout_marginBottom="16dp"/>
+
+    <Button
+        android:id="@+id/greenButton"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:text="초록색"
+        android:backgroundTint="#4CAF50"
+        android:layout_marginBottom="16dp"/>
+
+    <Button
+        android:id="@+id/whiteButton"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:text="흰색"
+        android:backgroundTint="#FFFFFF"
+        android:textColor="#000000"
+        android:layout_marginBottom="16dp"/>
+
+    <Button
+        android:id="@+id/yellowButton"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:text="노란색"
+        android:backgroundTint="#FFEB3B"
+        android:textColor="#000000"
+        android:layout_marginBottom="16dp"/>
+
+    <Button
+        android:id="@+id/redButton"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:text="빨간색"
+        android:backgroundTint="#F44336"
+        android:layout_marginBottom="16dp"/>
+</LinearLayout> 

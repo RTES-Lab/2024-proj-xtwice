@@ -50,6 +50,10 @@
         <activity android:name=".VideoSizeActivity"
             android:exported="false"/>
 
+        <activity
+            android:name=".MarkerColorActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

@@ -62,6 +62,9 @@ class HSVActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_hsv)
 
+        // 먼저 뷰들을 초기화
+        initializeSeekBars()
+        
         imageView = findViewById(R.id.imageView)
         hsvInfoTextView = findViewById(R.id.hsvInfoTextView)
 
@@ -76,10 +79,32 @@ class HSVActivity : AppCompatActivity() {
         // FPS 값을 Float로 받기
         fps = intent.getFloatExtra("fps", 30f)
 
+        // 기본 HSV 범위 설정
+        @Suppress("DEPRECATION")
+        val defaultHSVRange = intent.getParcelableExtra<HSVRange>("defaultHSVRange")
+        defaultHSVRange?.let {
+            hMin = it.hMin
+            hMax = it.hMax
+            sMin = it.sMin
+            sMax = it.sMax
+            vMin = it.vMin
+            vMax = it.vMax
+            
+            // SeekBar 초기값 설정
+            hSeekBarMin.progress = hMin
+            hSeekBarMax.progress = hMax
+            sMinSeekBar.progress = sMin
+            sMaxSeekBar.progress = sMax
+            vMinSeekBar.progress = vMin
+            vMaxSeekBar.progress = vMax
+        }
+
         loadAndProcessImage(videoUri)
-        initializeSeekBars()
         setupSeekBarListeners()
         setupConfirmButton()
+        
+        // 초기 이미지를 HSV 필터가 적용된 상태로 표시
+        updateImageWithHSVFilter()
     }
 
     private fun loadAndProcessImage(videoUri: Uri?) {

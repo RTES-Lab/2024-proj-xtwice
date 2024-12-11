@@ -303,7 +303,7 @@ class ROIActivity : AppCompatActivity() {
 
             if (left < right && top < bottom) {
                 val roiData = ROIData(left, top, right, bottom)
-                val intent = Intent(this, HSVActivity::class.java).apply {
+                val intent = Intent(this, MarkerColorActivity::class.java).apply {
                     putExtra("roiData", roiData)
                     putExtra("videoUri", getIntent().getStringExtra("videoUri"))
                     putExtra("fps", intent.getFloatExtra("fps", 30f))

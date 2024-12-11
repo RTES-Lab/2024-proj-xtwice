@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.provider.MediaStore
 import androidx.appcompat.app.AppCompatActivity
 import com.example.useopencvwithcmakeandkotlin.databinding.ActivityMainBinding
+import android.widget.Toast
 
 // class 이름: MainActivity, parent: AppCompatActivity()
 class MainActivity : AppCompatActivity() {
@@ -49,9 +50,28 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == REQUEST_VIDEO_PICK && resultCode == RESULT_OK) {
             val videoUri = data?.data
             videoUri?.let {
+                // 파일 이름 가져오기
+                val fileName = getFileName(it)
+                // 토스트 메시지 표시
+                Toast.makeText(this, "'${fileName}'을(를) 선택하였습니다.", Toast.LENGTH_SHORT).show()
                 handleSelectedVideo(it)
             }
         }
+    }
+
+    // 파일 이름을 가져오는 함수 추가
+    private fun getFileName(uri: Uri): String {
+        var fileName = "알 수 없는 파일"
+        val cursor = contentResolver.query(uri, null, null, null, null)
+        cursor?.use {
+            if (it.moveToFirst()) {
+                val displayNameIndex = it.getColumnIndex(MediaStore.MediaColumns.DISPLAY_NAME)
+                if (displayNameIndex != -1) {
+                    fileName = it.getString(displayNameIndex)
+                }
+            }
+        }
+        return fileName
     }
 
     // 비디오 선택 후 처리하는 부분

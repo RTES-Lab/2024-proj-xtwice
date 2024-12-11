@@ -172,7 +172,7 @@ class DisplacementActivity : AppCompatActivity() {
                 displayFrame,
                 org.opencv.core.Point(safeLeft.toDouble(), safeTop.toDouble()),
                 org.opencv.core.Point(safeRight.toDouble(), safeBottom.toDouble()),
-                Scalar(255.0, 0.0, 0.0),
+                Scalar(255.0, 0.0, 0.0),  // RGB 형식
                 2
             )
             
@@ -180,7 +180,7 @@ class DisplacementActivity : AppCompatActivity() {
             val resultBitmap = Bitmap.createBitmap(
                 displayFrame.cols(),
                 displayFrame.rows(),
-                Bitmap.Config.ARGB_8888
+                Bitmap.Config.ARGB_8888 
             )
             Utils.matToBitmap(displayFrame, resultBitmap)
             
@@ -193,10 +193,15 @@ class DisplacementActivity : AppCompatActivity() {
         }
         
         // 나머지 프레임 처리 계속...
+        var frameReadCount = 0
         while (videoCapture.read(frame)) {
-            currentFrame++
+            frameReadCount++
+            if (frameReadCount % 100 == 0) {  // 100프레임마다 로그 출력
+                Log.d("DisplacementActivity", "현재까지 읽은 프레임 수: $frameReadCount")
+            }
+            
             if (frame.empty()) {
-                Log.e("DisplacementActivity", "빈 프레임을 읽었습니다: $currentFrame")
+                Log.e("DisplacementActivity", "빈 프레임: $frameReadCount")
                 continue
             }
             
@@ -207,7 +212,7 @@ class DisplacementActivity : AppCompatActivity() {
             Log.d("DisplacementActivity", """
                 프레임 정보:
                 - 원본 크기: ${frame.cols()}x${frame.rows()}
-                - 회전 후 크기: ${frameWidth}x${frameHeight}
+                - 회전 후 크기: ${frameWidth}x${frameHeight} 
                 - ROI: (${roiData.left}, ${roiData.top}, ${roiData.right}, ${roiData.bottom})
             """.trimIndent())
             
@@ -303,7 +308,7 @@ class DisplacementActivity : AppCompatActivity() {
             // 메모리 해제
             roi.release()
 
-            // 진행 상황 업데트
+            // 진행 상황 업데이트
             val progress = (currentFrame.toFloat() / totalFrames * 100).toInt()
             runOnUiThread {
                 progressBar.progress = currentFrame
@@ -346,6 +351,12 @@ class DisplacementActivity : AppCompatActivity() {
         runOnUiThread {
             Toast.makeText(this, "변위 측정이 완료되었습니다.", Toast.LENGTH_SHORT).show()
         }
+
+        Log.d("DisplacementActivity", """
+            프레임 처리 결과:
+            - 총 읽은 프레임 수: $frameReadCount
+            - 저장된 변위 데이터 수: ${displacements.size}
+        """.trimIndent())
     }
 
     private fun saveDisplacementsToCSV(displacements: List<Pair<Float, Float>>) {
