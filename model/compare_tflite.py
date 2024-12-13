@@ -1,17 +1,16 @@
-# main.py
+# compare_tflite.py
 
 import os
 
 import tensorflow as tf
-from sklearn.model_selection import KFold
 from sklearn.metrics import classification_report
-
-from tqdm import tqdm
 
 from funs.databuilder import make_dataframe, augment_dataframe, add_statistics, get_data_label
 from funs.utils import set_seed, load_yaml, get_dir_list, log_results, calculate_result
 from funs.draw import get_stat_hist_pic
 from funs.Model import Model
+
+from sklearn.model_selection import train_test_split
 
 import numpy as np
 
@@ -44,43 +43,36 @@ def main(yaml_config, target_config, save_figs=True, save_model=True, save_log=T
     X, Y = get_data_label(statistics_df, target_config['input_feature'])
     print(f'input feature: {target_config["input_feature"]}')
 
-    # 10-fold Cross Validation
-    kf = KFold(n_splits=10, shuffle=True)
+    X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
+    
     accuracies = []
     losses = []
     all_y_true = []
     all_y_pred = []
+
+    # 모델 정의
+    model = Model(X_train)
+    model, model_name = model.ANN()
+
+    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+
+    # 모델 학습
+    history = model.fit(X_train, y_train, epochs=yaml_config.epochs, batch_size=yaml_config.batch_size, validation_data=(X_test, y_test), verbose=0)
     
 
-    for fold, (train_index, test_index) in enumerate(tqdm(kf.split(X), total=kf.get_n_splits(), desc="Folds")):
-        X_train, X_test = X[train_index], X[test_index]
-        y_train, y_test = Y[train_index], Y[test_index]
+    # 검증 정확도 및 손실
+    accuracy = history.history['val_accuracy'][-1]
+    loss = history.history['val_loss'][-1]
 
-        # 모델 정의
-        model = Model(X_train)
-        model, model_name = model.ANN()
+    # 예측값 및 실제값 저장
+    y_pred_probs = model.predict(X_test)
+    y_pred = np.argmax(y_pred_probs, axis=1)
+    all_y_true.append(y_test)
+    all_y_pred.append(y_pred)
 
-        model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-
-        # 모델 학습
-        history = model.fit(X_train, y_train, epochs=yaml_config.epochs, batch_size=yaml_config.batch_size, validation_data=(X_test, y_test), verbose=0)
-
-        # 검증 정확도 및 손실
-        accuracy = history.history['val_accuracy'][-1]
-        loss = history.history['val_loss'][-1]
-
-        # 예측값 및 실제값 저장
-        y_pred_probs = model.predict(X_test)
-        y_pred = np.argmax(y_pred_probs, axis=1)
-        all_y_true.append(y_test)
-        all_y_pred.append(y_pred)
-
-        if not np.isnan(accuracy) and not np.isnan(loss):
-            accuracies.append(accuracy)
-            losses.append(loss)
-        else:
-            print(f"Warning: Fold {fold+1} produced NaN accuracy or loss")
-
+    if not np.isnan(accuracy) and not np.isnan(loss):
+        accuracies.append(accuracy)
+        losses.append(loss)
     
     mean_accuracy, accuracy_confidence_interval, mean_loss, loss_confidence_interval = calculate_result(accuracies, losses)
 

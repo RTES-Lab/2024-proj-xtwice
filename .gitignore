@@ -4,6 +4,4 @@ input
 *__pycache__
 *.pyc
 
-experiment_results.txt
-
 xtwice
