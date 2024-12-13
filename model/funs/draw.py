@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 from typing import List
 
-def get_stat_hist_pic(df: pd.DataFrame, draw_targets: List[str], save_path: str):
+def get_stat_hist_pic(df: pd.DataFrame, main_title: str, draw_targets: List[str], save_path: str):
     """
     주어진 데이터프레임에서 각 fault_type에 대한 Peak과 RMS 값의 분포를 히스토그램으로 생성하고 저장하는 함수
 
@@ -23,6 +23,8 @@ def get_stat_hist_pic(df: pd.DataFrame, draw_targets: List[str], save_path: str)
     fig_len = len(draw_targets)
     plt.figure(figsize=(20, 5*fig_len))
     
+    plt.suptitle(main_title, fontsize=50, y=0.98) 
+
     for i in range(fig_len):
         plt.subplot(fig_len, 1, i+1)
         for fault_type in fault_type_list:
@@ -36,7 +38,7 @@ def get_stat_hist_pic(df: pd.DataFrame, draw_targets: List[str], save_path: str)
         plt.legend(fontsize=25, loc='upper right') 
 
     # 레이아웃 조정 및 저장
-    plt.tight_layout()
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.savefig(save_path)
     plt.close()
 

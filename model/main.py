@@ -3,8 +3,8 @@
 import os
 
 import tensorflow as tf
-from tensorflow.python.keras import Sequential
-from tensorflow.python.keras.layers import Dense
+# from tensorflow.python.keras import Sequential
+# from tensorflow.python.keras.layers import Dense
 from sklearn.model_selection import KFold
 import scipy.stats as stats
 
@@ -13,14 +13,16 @@ from tqdm import tqdm
 from funs.databuilder import make_dataframe, augment_dataframe, add_statistics, get_data_label
 from funs.utils import set_seed, load_yaml, get_dir_list
 from funs.draw import get_stat_hist_pic
+from funs.Model import Model
 
 import numpy as np
 
 def main(yaml_config, target_config, save_figs=True, save_model=True):
     # set_seed(yaml_config.seed)
 
-    directory = os.path.join(yaml_config.output_dir, target_config['date'])
-    directory = get_dir_list(directory)
+    directory_list = [os.path.join(yaml_config.output_dir, date) for date in target_config['date']]
+    # print(directory_list)
+    directory = get_dir_list(directory_list, target_view=target_config['axis'])
 
     # 데이터프레임 제작
     df = make_dataframe(yaml_config, directory)
@@ -35,13 +37,20 @@ def main(yaml_config, target_config, save_figs=True, save_model=True):
     feature_list.remove('average')
 
     if save_figs:
+        date_str = "_".join([str(date) for date in target_config["date"]])
         # peak, rms distribution 그림 (Optional)
-        get_stat_hist_pic(statistics_df, draw_targets=feature_list,
-                          save_path=f'./feature_distribution.png')
+        get_stat_hist_pic(statistics_df, 
+                          main_title=f'{date_str} feature distribution, z axis, Front view',
+                          draw_targets=feature_list,
+                          save_path=f'./{date_str}_feature_distribution_all.png')
+        
+    return
         
     # 데이터, 라벨 얻기
     X, Y = get_data_label(statistics_df, target_config['input_feature'])
     print(f'input feature: {target_config["input_feature"]}')
+
+    
 
     # 10-fold Cross Validation
     kf = KFold(n_splits=10, shuffle=True)
@@ -53,17 +62,13 @@ def main(yaml_config, target_config, save_figs=True, save_model=True):
         y_train, y_test = Y[train_index], Y[test_index]
 
         # 모델 정의
-        ANN = Sequential([
-            Dense(128, activation='relu', input_shape=(X_train.shape[1],)),
-            Dense(64, activation='relu'),
-            Dense(32, activation='relu'),
-            Dense(4, activation='softmax')
-        ])
+        model = Model(X_train)
+        model, model_name = model.ANN()
 
-        ANN.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+        model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
         # 모델 학습
-        history = ANN.fit(X_train, y_train, epochs=yaml_config.epochs, batch_size=yaml_config.batch_size, validation_data=(X_test, y_test), verbose=0)
+        history = model.fit(X_train, y_train, epochs=yaml_config.epochs, batch_size=yaml_config.batch_size, validation_data=(X_test, y_test), verbose=0)
 
         # 검증 정확도 및 손실
         accuracy = history.history['val_accuracy'][-1]
@@ -98,11 +103,11 @@ def main(yaml_config, target_config, save_figs=True, save_model=True):
         print("Not enough valid accuracy or loss values to compute confidence interval")
 
     if save_model:
-        converter = tf.lite.TFLiteConverter.from_keras_model(ANN)
+        converter = tf.lite.TFLiteConverter.from_keras_model(model)
         tflite_model = converter.convert()
 
         model_dir = yaml_config.model_dir
-        model_filename = f"ANN_{target_config['input_feature']}.tflite"
+        model_filename = f"{model_name}_{target_config['input_feature']}.tflite"
         model_path = os.path.join(model_dir, model_filename)
 
         os.makedirs(model_dir, exist_ok=True)
@@ -112,13 +117,14 @@ def main(yaml_config, target_config, save_figs=True, save_model=True):
 
 if __name__ == "__main__":
     target_config = {
-        'date': '1105',         # 필수
+        # 'date': ['1011', '1012'],  
+        'date': ['1011', '1012', '1024', '1102', '1105'],         # 필수
         # 'bearing_type': '6204', # optional
         # 'RPM': '1201',          # optional
-        # 'axis': 'F',            # optional
-        'input_feature': 'all'  # 필수. 모델 input feature로 사용할 데이터
+        'axis': 'F',            # optional
+        'input_feature': 'pkt_plus_rms'  # 필수. 모델 input feature로 사용할 데이터
     }
 
     yaml_config = load_yaml('./model_config.yaml')
 
-    main(yaml_config, target_config, save_figs=True, save_model=False)
+    main(yaml_config, target_config, save_figs=True, save_model=True)

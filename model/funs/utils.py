@@ -52,8 +52,12 @@ def set_seed(seed: int):
         torch.cuda.manual_seed_all(seed)
 
 
+from typing import List, Optional, Union
+import os
+import glob
+
 def get_dir_list(
-        target_dir: str, 
+        target_dir: Union[str, List[str]], 
         target_bearing: Optional[str] = None, target_rpm: Optional[str] = None, 
         target_fault_type: Optional[str] = None, target_view: Optional[str] = None, 
         ) -> List[str]:
@@ -62,8 +66,8 @@ def get_dir_list(
     
     Parameters
     ----------
-    target_dir: str
-        검색할 상위 디렉토리 경로.
+    target_dir: Union[str, List[str]]
+        검색할 상위 디렉토리 경로. 문자열 또는 문자열 리스트 가능.
     target_bearing: str
         디렉토리 이름에 포함될 베어링 유형 정보. 기본값은 None.
     target_rpm: str, optional
@@ -78,20 +82,28 @@ def get_dir_list(
     dir_list: List[str]  
         조건에 맞는 디렉토리 경로 리스트.
     '''
-    pattern = os.path.join(target_dir, '*')
+    # target_dir이 문자열이면 리스트로 변환
+    if isinstance(target_dir, str):
+        target_dir = [target_dir]
 
-    if target_bearing:
-        pattern += f'{target_bearing}*'
-    if target_rpm:
-        pattern += f'{target_rpm}*'
-    if target_fault_type:
-        pattern += f'{target_fault_type}*'
-    if target_view:
-        pattern += f'{target_view}'
+    # 모든 target_dir에 대해 디렉토리 패턴 검색
+    all_dir_list = []
+    for base_dir in target_dir:
+        pattern = os.path.join(base_dir, '*')
 
-    dir_list = glob.glob(pattern)
+        if target_bearing:
+            pattern += f'{target_bearing}*'
+        if target_rpm:
+            pattern += f'{target_rpm}*'
+        if target_fault_type:
+            pattern += f'{target_fault_type}*'
+        if target_view:
+            pattern += f'{target_view}'
 
-    if not dir_list:
-        raise FileNotFoundError('The directory that meets your criteria does not exist. Please check the parameters you entered.')
+        dir_list = glob.glob(pattern)
+        all_dir_list.extend(dir_list)
 
-    return sorted(dir_list)
+    if not all_dir_list:
+        raise FileNotFoundError('The directories that meet your criteria do not exist. Please check the parameters you entered.')
+
+    return sorted(all_dir_list)
