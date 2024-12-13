@@ -2,6 +2,7 @@ seed: 42
 
 output_dir: '../MDPS-vis-master/output'
 model_dir: './model/saved'
+log_txt: './experiment_results.txt'
 
 axis_to_csv_dic:
   'F': ['x.csv', 'z.csv']
@@ -9,8 +10,8 @@ axis_to_csv_dic:
   'T': ['x.csv', 'y.csv']
 
 label_dic:
-    'H' : 0
-    'B' : 1
+    'B' : 0
+    'H' : 1
     'IR': 2
     'OR': 3
 

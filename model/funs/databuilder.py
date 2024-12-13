@@ -264,6 +264,11 @@ def get_data_label(df: pd.DataFrame, target: str) -> Tuple[np.ndarray, np.ndarra
     """
     label_encoder = LabelEncoder()
     df['fault_type_encoded'] = label_encoder.fit_transform(df['fault_type'])
+
+    # print("클래스 이름과 레이블 매핑:")
+    # for class_name, label in zip(label_encoder.classes_, range(len(label_encoder.classes_))):
+    #     print(f"{class_name}: {label}")
+    
     Y = df['fault_type_encoded'].values
     
     arr = np.vstack(df[target]) 

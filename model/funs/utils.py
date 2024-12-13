@@ -9,10 +9,10 @@ from box import Box
 
 from typing import List, Optional
 
-import numpy as np
-
 import torch
 import tensorflow as tf
+import numpy as np
+import scipy.stats as stats
 
 def load_yaml(config_path: str) -> Box:
     """
@@ -107,3 +107,58 @@ def get_dir_list(
         raise FileNotFoundError('The directories that meet your criteria do not exist. Please check the parameters you entered.')
 
     return sorted(all_dir_list)
+
+def log_results(file_path, input_feature, mean_accuracy, accuracy_confidence_interval, mean_loss, loss_confidence_interval, report):
+    """
+    결과를 파일에 저장하거나 기존 파일에 이어 쓰는 함수.
+
+    Parameters
+    ----------
+    file_path : str
+        저장할 파일 경로
+    input_feature : str
+        모델에서 사용한 특징 (target_config['input_feature'])
+    mean_accuracy : float
+        평균 정확도
+    accuracy_confidence_interval : Tuple[float, float]
+        정확도 신뢰구간
+    mean_loss : float
+        평균 손실
+    loss_confidence_interval : Tuple[float, float]
+        손실 신뢰구간
+    report : str
+        성능 보고서 (classification_report 출력)
+    """
+    with open(file_path, 'a') as file:  # 'a' 모드로 열어 기존 파일에 이어 쓰기
+        file.write("====================================================\n")
+        file.write("모델 결과\n")
+        file.write(f"사용 특징: {input_feature}\n")
+        file.write(f"정확도: {mean_accuracy:.4f} ± {accuracy_confidence_interval[1] - mean_accuracy:.4f}\n")
+        file.write(f"손실: {mean_loss:.4f} ± {loss_confidence_interval[1] - mean_loss:.4f}\n")
+        file.write("\n클래스별 성능 보고서:\n")
+        file.write(report)
+        file.write("\n")
+    print(f"결과가 {file_path}에 저장되었습니다.")
+
+
+def calculate_result(accuracy, loss):
+    if len(accuracy) > 1:
+        mean_accuracy = np.mean(accuracy)
+        accuracy_variance = np.var(accuracy)
+        mean_loss = np.mean(loss)
+        loss_variance = np.var(loss)
+
+        # 신뢰구간 계산
+        if accuracy_variance > 0:
+            accuracy_confidence_interval = stats.t.interval(0.95, len(accuracy)-1, loc=mean_accuracy, scale=stats.sem(accuracy))
+            print(f"정확도: {mean_accuracy:.4f} ± {accuracy_confidence_interval[1] - mean_accuracy:.4f}")
+        else:
+            print(f"정확도: {mean_accuracy:.4f} (변동이 없어 신뢰구간을 계산할 수 없습니다.)")
+
+        if loss_variance > 0:
+            loss_confidence_interval = stats.t.interval(0.95, len(loss)-1, loc=mean_loss, scale=stats.sem(loss))
+            print(f"손실: {mean_loss:.4f} ± {loss_confidence_interval[1] - mean_loss:.4f}")
+        else:
+            print(f"손실: {mean_loss:.4f} (변동이 없어 신뢰구간을 계산할 수 없습니다.)")
+
+    return mean_accuracy, accuracy_confidence_interval, mean_loss, loss_confidence_interval

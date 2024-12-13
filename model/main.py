@@ -3,25 +3,23 @@
 import os
 
 import tensorflow as tf
-# from tensorflow.python.keras import Sequential
-# from tensorflow.python.keras.layers import Dense
 from sklearn.model_selection import KFold
 import scipy.stats as stats
+from sklearn.metrics import classification_report
 
 from tqdm import tqdm
 
 from funs.databuilder import make_dataframe, augment_dataframe, add_statistics, get_data_label
-from funs.utils import set_seed, load_yaml, get_dir_list
+from funs.utils import set_seed, load_yaml, get_dir_list, log_results, calculate_result
 from funs.draw import get_stat_hist_pic
 from funs.Model import Model
 
 import numpy as np
 
-def main(yaml_config, target_config, save_figs=True, save_model=True):
-    # set_seed(yaml_config.seed)
+def main(yaml_config, target_config, save_figs=True, save_model=True, save_log=True):
+    set_seed(yaml_config.seed)
 
     directory_list = [os.path.join(yaml_config.output_dir, date) for date in target_config['date']]
-    # print(directory_list)
     directory = get_dir_list(directory_list, target_view=target_config['axis'])
 
     # 데이터프레임 제작
@@ -38,24 +36,22 @@ def main(yaml_config, target_config, save_figs=True, save_model=True):
 
     if save_figs:
         date_str = "_".join([str(date) for date in target_config["date"]])
-        # peak, rms distribution 그림 (Optional)
         get_stat_hist_pic(statistics_df, 
                           main_title=f'{date_str} feature distribution, z axis, Front view',
                           draw_targets=feature_list,
-                          save_path=f'./{date_str}_feature_distribution_all.png')
-        
-    return
+                          save_path=f'./feature_distribution_figs/{date_str}_feature_distribution_all.png')
         
     # 데이터, 라벨 얻기
     X, Y = get_data_label(statistics_df, target_config['input_feature'])
     print(f'input feature: {target_config["input_feature"]}')
 
-    
-
     # 10-fold Cross Validation
     kf = KFold(n_splits=10, shuffle=True)
     accuracies = []
     losses = []
+    all_y_true = []
+    all_y_pred = []
+    
 
     for fold, (train_index, test_index) in enumerate(tqdm(kf.split(X), total=kf.get_n_splits(), desc="Folds")):
         X_train, X_test = X[train_index], X[test_index]
@@ -74,34 +70,41 @@ def main(yaml_config, target_config, save_figs=True, save_model=True):
         accuracy = history.history['val_accuracy'][-1]
         loss = history.history['val_loss'][-1]
 
+        # 예측값 및 실제값 저장
+        y_pred_probs = model.predict(X_test)
+        y_pred = np.argmax(y_pred_probs, axis=1)
+        all_y_true.append(y_test)
+        all_y_pred.append(y_pred)
+
         if not np.isnan(accuracy) and not np.isnan(loss):
             accuracies.append(accuracy)
             losses.append(loss)
         else:
             print(f"Warning: Fold {fold+1} produced NaN accuracy or loss")
 
-    # 결과 출력
-    if len(accuracies) > 1:
-        mean_accuracy = np.mean(accuracies)
-        accuracy_variance = np.var(accuracies)
-        mean_loss = np.mean(losses)
-        loss_variance = np.var(losses)
+    
+    mean_accuracy, accuracy_confidence_interval, mean_loss, loss_confidence_interval = calculate_result(accuracies, losses)
 
-        # 신뢰구간 계산
-        if accuracy_variance > 0:
-            accuracy_confidence_interval = stats.t.interval(0.95, len(accuracies)-1, loc=mean_accuracy, scale=stats.sem(accuracies))
-            print(f"정확도: {mean_accuracy:.4f} ± {accuracy_confidence_interval[1] - mean_accuracy:.4f}")
-        else:
-            print(f"정확도: {mean_accuracy:.4f} (변동이 없어 신뢰구간을 계산할 수 없습니다.)")
+    # 전체 테스트 결과를 기반으로 성능 보고서 출력
+    all_y_true = np.concatenate(all_y_true, axis=0)
+    all_y_pred = np.concatenate(all_y_pred, axis=0)
 
-        if loss_variance > 0:
-            loss_confidence_interval = stats.t.interval(0.95, len(losses)-1, loc=mean_loss, scale=stats.sem(losses))
-            print(f"손실: {mean_loss:.4f} ± {loss_confidence_interval[1] - mean_loss:.4f}")
-        else:
-            print(f"손실: {mean_loss:.4f} (변동이 없어 신뢰구간을 계산할 수 없습니다.)")
-    else:
-        print("Not enough valid accuracy or loss values to compute confidence interval")
+    report = classification_report(all_y_true, all_y_pred, target_names=['B', 'H', 'IR', 'OR'], digits=4)
+    print('클래스별 성능 보고서')
+    print(report)
 
+    if save_log:
+        log_results(
+            yaml_config['log_txt'],
+            input_feature=target_config['input_feature'],
+            mean_accuracy=mean_accuracy,
+            accuracy_confidence_interval=accuracy_confidence_interval,
+            mean_loss=mean_loss,
+            loss_confidence_interval=loss_confidence_interval,
+            report=report
+        )
+
+    # 모델 저장
     if save_model:
         converter = tf.lite.TFLiteConverter.from_keras_model(model)
         tflite_model = converter.convert()
@@ -117,14 +120,14 @@ def main(yaml_config, target_config, save_figs=True, save_model=True):
 
 if __name__ == "__main__":
     target_config = {
-        # 'date': ['1011', '1012'],  
-        'date': ['1011', '1012', '1024', '1102', '1105'],         # 필수
+        'date': ['1105'],  
+        # 'date': ['1011', '1012', '1024', '1102', '1105'],         # 필수
         # 'bearing_type': '6204', # optional
         # 'RPM': '1201',          # optional
         'axis': 'F',            # optional
-        'input_feature': 'pkt_plus_rms'  # 필수. 모델 input feature로 사용할 데이터
+        'input_feature': 'rms'  # 필수. 모델 input feature로 사용할 데이터
     }
 
     yaml_config = load_yaml('./model_config.yaml')
 
-    main(yaml_config, target_config, save_figs=True, save_model=True)
+    main(yaml_config, target_config, save_figs=False, save_model=False, save_log=True)
