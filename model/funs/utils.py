@@ -108,7 +108,7 @@ def get_dir_list(
 
     return sorted(all_dir_list)
 
-def log_results(file_path, input_feature, mean_accuracy, accuracy_confidence_interval, mean_loss, loss_confidence_interval, report):
+def log_results(file_path, input_feature, mean_accuracy, accuracy_confidence_interval, mean_loss, loss_confidence_interval, report, timestamp):
     """
     결과를 파일에 저장하거나 기존 파일에 이어 쓰는 함수.
 
@@ -131,6 +131,7 @@ def log_results(file_path, input_feature, mean_accuracy, accuracy_confidence_int
     """
     with open(file_path, 'a') as file:  # 'a' 모드로 열어 기존 파일에 이어 쓰기
         file.write("====================================================\n")
+        file.write(f"Timestamp: {timestamp}\n")
         file.write("모델 결과\n")
         file.write(f"사용 특징: {input_feature}\n")
         file.write(f"정확도: {mean_accuracy:.4f} ± {accuracy_confidence_interval[1] - mean_accuracy:.4f}\n")

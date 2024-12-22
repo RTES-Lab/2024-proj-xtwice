@@ -77,7 +77,7 @@ def make_dataframe(
 
             if int(date) < 1100:
                 conversion_factor = conversion_factors.get(date, {}).get(view, 1)
-            elif int(date) == 1105:
+            elif int(date) == 1105 or int(date) == 1217:
                 conversion_factor = conversion_factors.get(date, {}).get(view, 1).get(fault_type, 1)
             else:
                 conversion_factor = conversion_factors.get(date, {}).get(view, 1).get(target_marker, 1)
@@ -186,61 +186,47 @@ def calculate_statistics(values):
     return peak, average, rms, crest_factor, pk2pk, skew, kurt
 
 
-def add_statistics(df : pd.DataFrame, target_axis: str) -> pd.DataFrame:
+def add_statistics(df: pd.DataFrame, target_axis: List[str]) -> pd.DataFrame:
     """
     주어진 데이터프레임에서 특정 축에 대해 통계적 특성을 계산하여
-    이를 데이터프레임에 새로운 열로 추가하는 함수
+    이를 데이터프레임에 새로운 열로 추가하는 함수.
 
     Parameters
     ----------
     df : pd.DataFrame
         통계 값을 추가할 원본 데이터프레임. 반드시 target_axis에 해당하는 데이터가 포함되어야 함.
-    target_axis : str
-        통계 값을 계산할 대상 축의 이름. e.g. 'x', 'z'
+    target_axis : list
+        통계 값을 계산할 대상 축의 이름 리스트. e.g. ['x', 'z']
 
     Returns
     -------
     pd.DataFrame
         통계 값이 추가된 데이터프레임. 
     """
-    rms_values = []
-    peak_values = []
-    avg_values = []
-    crest_factor_values = []
-    pkt_plus_rms_values = []
-    pk2pk_values = []
-    skew_values = []
-    kurt_values = []
+    for axis in target_axis:
+        # 각 축에 대해 결과 리스트 초기화
+        rms_values = []
+        peak_values = []
+        avg_values = []
+        rms_peak_values=[]
 
-    fusion_values = []
-    all_values = []
+        # 축 데이터가 존재하는지 확인
+        if axis not in df.columns:
+            raise ValueError(f"Target axis '{axis}' not found in DataFrame columns.")
 
-    for sample in df[target_axis]:
-        peak, average, rms, crest_factor, pk2pk, skew, kurt = calculate_statistics(sample)
-        rms_values.append(rms)
-        peak_values.append(peak)
-        avg_values.append(average)
-        crest_factor_values.append(crest_factor)
-        # pkt_plus_rms.append([peak,rms])
-        pkt_plus_rms_values.append(peak+rms)
-        pk2pk_values.append(pk2pk)
-        skew_values.append(skew)
-        kurt_values.append(kurt)
-        fusion_values.append(peak+rms+pk2pk)
-        all_values.append(peak+rms+pk2pk+skew+kurt)
+        # 통계 값 계산
+        for sample in df[axis]:
+            peak, average, rms, _, _, _, _ = calculate_statistics(sample)
+            rms_values.append(rms)
+            peak_values.append(peak)
+            avg_values.append(average)
+            rms_peak_values.append(rms+peak)
 
-
-    df['rms'] = rms_values
-    df['peak'] = peak_values
-    df['average'] = avg_values
-    df['crest_factor'] = crest_factor_values
-    df['pkt_plus_rms'] = pkt_plus_rms_values
-    df['pk2pk'] = pk2pk_values
-    df['skew'] = skew_values
-    df['kurt'] = kurt_values
-
-    df['fusion'] = fusion_values
-    df['all'] = all_values
+        # 통계 값 추가
+        df[f'{axis}_rms'] = rms_values
+        df[f'{axis}_peak'] = peak_values
+        df[f'{axis}_average'] = avg_values
+        df[f'{axis}_rms_peak_values'] = rms_peak_values
 
     return df
 
