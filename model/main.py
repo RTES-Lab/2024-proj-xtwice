@@ -28,50 +28,55 @@ def main(yaml_config, target_config, save_figs=True, save_model=True, save_log=T
 
     # 데이터 증강
     augmented_df = augment_dataframe(df, ['z'], yaml_config.sample_size, yaml_config.overlap)
-    print(augmented_df)
+
 
     # 통계값 값 추가
     statistics_df = add_statistics(augmented_df, ['z'])
+
+    print("총 데이터 개수: ", len(statistics_df))
+    fault_type_counts = statistics_df["fault_type"].value_counts()
+    print("결함 별 데이터 개수:\n", fault_type_counts) 
     
     feature_list = list(statistics_df.columns)[2:]
     feature_list.remove('z_average')
     # feature_list.remove('x_average')
     print(feature_list)
 
-    import matplotlib.pyplot as plt
+    if False:
+        import matplotlib.pyplot as plt
 
-    grouped = statistics_df.groupby('fault_type')
+        grouped = statistics_df.groupby('fault_type')
 
-    for fault_type, group in grouped:
-        # 각 fault_type의 z 값 결합
-        z_values = [item for sublist in group['z'] for item in sublist]
+        for fault_type, group in grouped:
+            # 각 fault_type의 z 값 결합
+            z_values = [item for sublist in group['z'] for item in sublist]
 
-        # 플롯 생성
-        plt.figure(figsize=(15, 6))
-        plt.plot(z_values, label=f"{fault_type}", linewidth=2)
-        plt.title(f"Z Values for Fault Type: {fault_type}", fontsize=16)
-        plt.xlabel("Index", fontsize=12)
-        plt.ylabel("Z Value", fontsize=12)
-        plt.legend(fontsize=10)
-        plt.grid(True)
+            # 플롯 생성
+            plt.figure(figsize=(15, 6))
+            plt.plot(z_values, label=f"{fault_type}", linewidth=2)
+            plt.title(f"Z Values for Fault Type: {fault_type}", fontsize=16)
+            plt.xlabel("Index", fontsize=12)
+            plt.ylabel("Z Value", fontsize=12)
+            plt.legend(fontsize=10)
+            plt.grid(True)
 
-        # 파일 이름 설정 및 저장
-        file_name = f"{int(target_config['date'][0])}_{fault_type}_z_plot.png"
-        plt.savefig(file_name, bbox_inches='tight')
-        plt.close()
+            # 파일 이름 설정 및 저장
+            file_name = f"{int(target_config['date'][0])}_{fault_type}_z_plot.png"
+            plt.savefig(file_name, bbox_inches='tight')
+            plt.close()
 
-        print(f"Saved plot for fault_type {fault_type}: {file_name}")
+            print(f"Saved plot for fault_type {fault_type}: {file_name}")
 
     if save_figs:
         date_str = "_".join([str(date) for date in target_config["date"]])
         get_stat_hist_pic(statistics_df, 
-                          main_title=f'All date feature distribution, z axis, Front view',
+                          main_title=f'{target_config["date"][0]} feature distribution, z axis, Front view',
                           draw_targets=feature_list,
                           save_path=f'./feature_distribution_figs/z_axis/{date_str}_feature_distribution_peak_rms.png')
 
-        
+    
     # 데이터, 라벨 얻기
-    X, Y = get_data_label(statistics_df, target_config['input_feature'])
+    X, Y = get_data_label(augmented_df, target_config['input_feature'])
     print(f'input feature: {target_config["input_feature"]}')
 
     # 10-fold Cross Validation
@@ -125,14 +130,15 @@ def main(yaml_config, target_config, save_figs=True, save_model=True, save_log=T
     if save_log:
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         log_results(
-            yaml_config['log_txt'],
+            file_path = yaml_config['log_txt'],
+            timestamp=current_time,
+            date = target_config['date'],
             input_feature=target_config['input_feature'],
             mean_accuracy=mean_accuracy,
             accuracy_confidence_interval=accuracy_confidence_interval,
             mean_loss=mean_loss,
             loss_confidence_interval=loss_confidence_interval,
             report=report,
-            timestamp=current_time 
         )
 
     # 모델 저장
@@ -151,14 +157,14 @@ def main(yaml_config, target_config, save_figs=True, save_model=True, save_log=T
 
 if __name__ == "__main__":
     target_config = {
-        'date': ['1217'],  
+        'date': ['1105'],  
         # 'date': ['1011', '1012', '1024', '1102', '1105', '1217'],         # 필수
         # 'bearing_type': '6204', # optional
         # 'RPM': '1201',          # optional
         'axis': 'F',            # optional
-        'input_feature': 'z_rms'  # 필수. 모델 input feature로 사용할 데이터
+        'input_feature': 'z'  # 필수. 모델 input feature로 사용할 데이터
     }
 
     yaml_config = load_yaml('./model_config.yaml')
 
-    main(yaml_config, target_config, save_figs=True, save_model=False, save_log=False)
+    main(yaml_config, target_config, save_figs=False, save_model=False, save_log=True)

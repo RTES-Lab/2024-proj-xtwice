@@ -208,7 +208,6 @@ def add_statistics(df: pd.DataFrame, target_axis: List[str]) -> pd.DataFrame:
         rms_values = []
         peak_values = []
         avg_values = []
-        rms_peak_values=[]
 
         # 축 데이터가 존재하는지 확인
         if axis not in df.columns:
@@ -220,13 +219,11 @@ def add_statistics(df: pd.DataFrame, target_axis: List[str]) -> pd.DataFrame:
             rms_values.append(rms)
             peak_values.append(peak)
             avg_values.append(average)
-            rms_peak_values.append(rms+peak)
 
         # 통계 값 추가
         df[f'{axis}_rms'] = rms_values
         df[f'{axis}_peak'] = peak_values
         df[f'{axis}_average'] = avg_values
-        df[f'{axis}_rms_peak_values'] = rms_peak_values
 
     return df
 
