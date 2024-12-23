@@ -6,23 +6,32 @@ import tensorflow as tf
 from sklearn.model_selection import KFold
 from sklearn.metrics import classification_report
 
-from tqdm import tqdm
-
 from funs.databuilder import make_dataframe, augment_dataframe, add_statistics, get_data_label
 from funs.utils import set_seed, load_yaml, get_dir_list, log_results, calculate_result
 from funs.draw import get_stat_hist_pic, get_displacement_pic
-from funs.Model import Model
+from funs.Model import ANN
+from funs.Trainer import Trainer
 
 import numpy as np
 
 import datetime
 
+
+
 def main(
         yaml_config, target_config, save_figs=False, save_model=False, 
         save_log=False, save_displacement_figs=False
         ):
-    # set_seed(yaml_config.seed)
+    
+    ##############################
+    # 1. initialize              #
+    ##############################
+    set_seed(yaml_config.seed)
 
+
+    ##############################
+    # 2. preprocessing           #
+    ##############################
     directory_list = [os.path.join(yaml_config.output_dir, date) for date in target_config['date']]
     directory = get_dir_list(directory_list, target_view=target_config['axis'])
 
@@ -39,6 +48,10 @@ def main(
     fault_type_counts = statistics_df["fault_type"].value_counts()
     print(f"결함 별 데이터 개수:\n{fault_type_counts}") 
     
+
+    ##############################
+    # 3. plot figs (optional)    #
+    ##############################
     # 변위 데이터 플롯
     if save_displacement_figs:
         get_displacement_pic(statistics_df, 'z', target_config['date'])
@@ -51,48 +64,18 @@ def main(
                           draw_targets=list(statistics_df.columns),
                           save_path=f'./feature_distribution_figs/z_axis/{date_str}_feature_distribution_peak_rms.png')
     
+
+    ##############################
+    # 4. train                   #
+    ##############################
     # 데이터, 라벨 얻기
     X, Y = get_data_label(statistics_df, target_config['input_feature'])
     print(f'input feature: {target_config["input_feature"]}')
 
-    # 10-fold Cross Validation
-    kf = KFold(n_splits=10, shuffle=True)
-    accuracies = []
-    losses = []
-    all_y_true = []
-    all_y_pred = []
+    model = ANN()
+    trainer = Trainer(yaml_config)
     
-
-    for fold, (train_index, test_index) in enumerate(tqdm(kf.split(X), total=kf.get_n_splits(), desc="Folds")):
-        X_train, X_test = X[train_index], X[test_index]
-        y_train, y_test = Y[train_index], Y[test_index]
-
-        # 모델 정의
-        model = Model(X_train)
-        model, model_name = model.ANN()
-
-        model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-
-        # 모델 학습
-        history = model.fit(X_train, y_train, epochs=yaml_config.epochs, batch_size=yaml_config.batch_size, validation_data=(X_test, y_test), verbose=0)
-
-        # 검증 정확도 및 손실
-        accuracy = history.history['val_accuracy'][-1]
-        loss = history.history['val_loss'][-1]
-
-        # 예측값 및 실제값 저장
-        y_pred_probs = model.predict(X_test)
-        y_pred = np.argmax(y_pred_probs, axis=1)
-        all_y_true.append(y_test)
-        all_y_pred.append(y_pred)
-
-        if not np.isnan(accuracy) and not np.isnan(loss):
-            accuracies.append(accuracy)
-            losses.append(loss)
-        else:
-            print(f"Warning: Fold {fold+1} produced NaN accuracy or loss")
-
-    
+    accuracies, losses, all_y_true, all_y_pred = trainer.kfold_training(X, Y, model)
     mean_accuracy, accuracy_confidence_interval, mean_loss, loss_confidence_interval = calculate_result(accuracies, losses)
 
     # 전체 테스트 결과를 기반으로 성능 보고서 출력
@@ -113,7 +96,10 @@ def main(
     for class_label, accuracy in class_accuracies.items():
         print(f"클래스 {yaml_config.class2label_dic[class_label]}: {accuracy:.4f}")
 
-    # 로그 저장
+
+    ##############################
+    # 5. save                    #
+    ##############################
     if save_log:
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         log_results(
@@ -136,12 +122,13 @@ def main(
         tflite_model = converter.convert()
 
         model_dir = yaml_config.model_dir
-        model_filename = f"{model_name}_{target_config['input_feature']}.tflite"
+        model_filename = f"{'ANN'}_{target_config['input_feature']}.tflite"
         model_path = os.path.join(model_dir, model_filename)
 
         os.makedirs(model_dir, exist_ok=True)
         with open(model_path, 'wb') as f:
             f.write(tflite_model)
+
 
 
 if __name__ == "__main__":
@@ -156,4 +143,4 @@ if __name__ == "__main__":
 
     yaml_config = load_yaml('./model_config.yaml')
 
-    main(yaml_config, target_config, save_figs=False, save_model=False, save_log=False)
+    main(yaml_config, target_config, save_figs=True, save_model=False, save_log=False)
