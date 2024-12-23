@@ -11,7 +11,8 @@ class Model:
 
     def ANN(self):
         self.model = Sequential([
-            Dense(128, activation='relu', input_shape=(self.X_train.shape[1],)),
+            Dense(256, activation='relu', input_shape=(self.X_train.shape[1],)),
+            Dense(128, activation='relu'),
             Dense(64, activation='relu'),
             Dense(32, activation='relu'),
             Dense(4, activation='softmax')

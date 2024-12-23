@@ -7,7 +7,7 @@ import glob
 import yaml
 from box import Box
 
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import torch
 import tensorflow as tf
@@ -51,10 +51,6 @@ def set_seed(seed: int):
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
 
-
-from typing import List, Optional, Union
-import os
-import glob
 
 def get_dir_list(
         target_dir: Union[str, List[str]], 
@@ -108,27 +104,11 @@ def get_dir_list(
 
     return sorted(all_dir_list)
 
-def log_results(file_path, timestamp, date, input_feature, mean_accuracy, accuracy_confidence_interval, mean_loss, loss_confidence_interval, report):
-    """
-    결과를 파일에 저장하거나 기존 파일에 이어 쓰는 함수.
 
-    Parameters
-    ----------
-    file_path : str
-        저장할 파일 경로
-    input_feature : str
-        모델에서 사용한 특징 (target_config['input_feature'])
-    mean_accuracy : float
-        평균 정확도
-    accuracy_confidence_interval : Tuple[float, float]
-        정확도 신뢰구간
-    mean_loss : float
-        평균 손실
-    loss_confidence_interval : Tuple[float, float]
-        손실 신뢰구간
-    report : str
-        성능 보고서 (classification_report 출력)
-    """
+def log_results(
+        file_path, timestamp, date, input_feature, mean_accuracy, accuracy_confidence_interval, 
+        mean_loss, loss_confidence_interval, class2label_dic, class_accuracies, report
+                ):
     with open(file_path, 'a', encoding='utf-8') as file:  # 'a' 모드로 열어 기존 파일에 이어 쓰기
         file.write("====================================================\n")
         file.write(f"Timestamp: {timestamp}\n")
@@ -137,6 +117,10 @@ def log_results(file_path, timestamp, date, input_feature, mean_accuracy, accura
         file.write(f"사용 특징: {input_feature}\n")
         file.write(f"정확도: {mean_accuracy:.4f} ± {accuracy_confidence_interval[1] - mean_accuracy:.4f}\n")
         file.write(f"손실: {mean_loss:.4f} ± {loss_confidence_interval[1] - mean_loss:.4f}\n")
+        if class_accuracies is not None:
+            file.write("\n클래스별 정확도:\n")
+            for class_label, accuracy in class_accuracies.items():
+                file.write(f"클래스 {class2label_dic[class_label]}: {accuracy:.4f}\n")
         file.write("\n클래스별 성능 보고서:\n")
         file.write(report)
         file.write("\n")

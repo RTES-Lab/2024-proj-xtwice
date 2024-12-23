@@ -12,9 +12,6 @@ from typing import List, Tuple, Optional
 
 from sklearn.preprocessing import LabelEncoder
 
-import glob
-
-
 def make_dataframe(
         config: Box, directory_list: List[str], target_marker: Optional[str] = 'A', max_len: Optional[int] = None
         ) -> pd.DataFrame:

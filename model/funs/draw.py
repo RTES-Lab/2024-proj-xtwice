@@ -53,3 +53,4 @@ def get_stat_hist_pic(df: pd.DataFrame, main_title: str, draw_targets: List[str]
     plt.tight_layout()  # 그래프 오른쪽에 공간 확보
     plt.savefig(save_path)
     plt.close()
+    print(f"그림이 {save_path}에 저장되었습니다.")
