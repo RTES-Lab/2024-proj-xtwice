@@ -24,14 +24,15 @@ def get_stat_hist_pic(df: pd.DataFrame, main_title: str, draw_targets: List[str]
 
     # draw_targets를 rms와 peak로 분리
     rms_targets = [target for target in draw_targets if 'rms' in target.lower()]
-    peak_targets = [target for target in draw_targets if 'peak' in target.lower()]
+    skewness_targets = [target for target in draw_targets if 'skewness' in target.lower()]
+    kurtosis_targets = [target for target in draw_targets if 'kurtosis' in target.lower()]
 
-    groups = {"RMS": rms_targets, "Peak": peak_targets}
+    groups = {"RMS": rms_targets, "Skewness": skewness_targets, "Kurtosis": kurtosis_targets}
     
     fig_len = len(groups)
     plt.figure(figsize=(20, 5 * fig_len))
 
-    plt.suptitle(main_title, fontsize=50)
+    plt.suptitle(main_title, fontsize=50, y=0.99)
 
     for i, (group_name, targets) in enumerate(groups.items()):
         plt.subplot(fig_len, 1, i + 1)
@@ -50,7 +51,7 @@ def get_stat_hist_pic(df: pd.DataFrame, main_title: str, draw_targets: List[str]
     # plt.tight_layout(rect=[0, 0, 0.85, 0.95])  # 그래프 오른쪽에 공간 확보
     # plt.savefig(save_path, bbox_inches='tight')
     
-    plt.tight_layout()  # 그래프 오른쪽에 공간 확보
+    plt.tight_layout()  
     plt.savefig(save_path)
     plt.close()
     print(f"그림이 {save_path}에 저장되었습니다.")

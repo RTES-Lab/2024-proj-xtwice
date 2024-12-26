@@ -3,13 +3,12 @@
 import os
 
 import tensorflow as tf
-from sklearn.model_selection import KFold
 from sklearn.metrics import classification_report
 
 from funs.databuilder import make_dataframe, augment_dataframe, add_statistics, get_data_label
 from funs.utils import set_seed, load_yaml, get_dir_list, log_results, calculate_result
 from funs.draw import get_stat_hist_pic, get_displacement_pic
-from funs.Model import ANN
+from funs.models.ann import ANN
 from funs.Trainer import Trainer
 
 import numpy as np
@@ -19,7 +18,7 @@ import datetime
 
 
 def main(
-        yaml_config, target_config, save_figs=False, save_model=False, 
+        yaml_config, target_config, save_feature_figs=False, save_model=False, 
         save_log=False, save_displacement_figs=False
         ):
     
@@ -33,16 +32,16 @@ def main(
     # 2. preprocessing           #
     ##############################
     directory_list = [os.path.join(yaml_config.output_dir, date) for date in target_config['date']]
-    directory = get_dir_list(directory_list, target_view=target_config['axis'])
+    directory = get_dir_list(directory_list, target_view=target_config['view'])
 
     # 데이터프레임 제작
     df = make_dataframe(yaml_config, directory)
 
     # 데이터 증강
-    augmented_df = augment_dataframe(df, ['z'], yaml_config.sample_size, yaml_config.overlap)
+    augmented_df = augment_dataframe(df, target_config['axis'], yaml_config.sample_size, yaml_config.overlap)
 
     # 통계값 값 추가
-    statistics_df = add_statistics(augmented_df, ['z'])
+    statistics_df = add_statistics(augmented_df, target_config['axis'])
 
     print("총 데이터 개수:", len(statistics_df))
     fault_type_counts = statistics_df["fault_type"].value_counts()
@@ -53,18 +52,27 @@ def main(
     # 3. plot figs (optional)    #
     ##############################
     # 변위 데이터 플롯
+    if len(target_config['axis']) == 1:
+        axis_name = target_config['axis'][0]
+    elif len(target_config['axis']) == 2:
+        axis_name = f"{target_config['axis'][0]}, {target_config['axis'][1]}"
+
+    if len(target_config['date']) == 1:
+        date_name = target_config['date'][0]
+    else:
+        date_name = 'All'
+
     if save_displacement_figs:
-        get_displacement_pic(statistics_df, 'z', target_config['date'])
+        get_displacement_pic(statistics_df, axis_name, target_config['date'])
 
     # 특징별 분포 히스토그램 플롯
-    if save_figs:
+    if save_feature_figs:
         date_str = "_".join([str(date) for date in target_config["date"]])
         get_stat_hist_pic(statistics_df, 
-                          main_title=f'All feature distribution, z axis, Front view',
+                          main_title=f'{date_name} feature distribution, {axis_name} axis, Front view',
                           draw_targets=list(statistics_df.columns),
-                          save_path=f'./feature_distribution_figs/z_axis/{date_str}_feature_distribution_peak_rms.png')
+                          save_path=f'{yaml_config.feature_figs_dir}/{axis_name}_axis/{date_str}_feature_distribution_peak_rms.png')
     
-
     ##############################
     # 4. train                   #
     ##############################
@@ -133,14 +141,15 @@ def main(
 
 if __name__ == "__main__":
     target_config = {
-        'date': ['1217'],  
+        'date': ['1105', '1217'],           # 필수
         # 'date': ['1011', '1012', '1024', '1102', '1105', '1217'],         # 필수
-        # 'bearing_type': '6204', # optional
-        # 'RPM': '1200',          # optional
-        'axis': 'F',            # optional
-        'input_feature': 'z_rms'  # 필수. 모델 input feature로 사용할 데이터
+        # 'bearing_type': '6204',   # optional
+        # 'RPM': '1200',            # optional
+        'view': 'F',                # optional
+        'axis': ['z'],              # 필수. ['z'] or ['x'] or ['z', 'x'] 
+        'input_feature': 'z_fused_features'    # 필수. 모델 input feature로 사용할 데이터
     }
 
     yaml_config = load_yaml('./model_config.yaml')
 
-    main(yaml_config, target_config, save_figs=True, save_model=False, save_log=False)
+    main(yaml_config, target_config, save_feature_figs=False, save_model=False, save_log=False)
