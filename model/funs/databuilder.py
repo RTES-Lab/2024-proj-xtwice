@@ -130,29 +130,32 @@ def normalize_data(data: np.ndarray) -> np.ndarray:
     standardized_data = (data - means) / std_devs
     return standardized_data
 
-def add_statistics(df: pd.DataFrame, target_axis: List[str]) -> pd.DataFrame:
+def add_statistics(df: pd.DataFrame, target_axis: List[str], is_standardize: bool = True) -> pd.DataFrame:
     """
-    통계값을 계산한 후 Standardization을 적용하여 데이터프레임에 추가하는 함수.
+    주어진 데이터프레임에서 특정 축에 대해 통계적 특성을 계산하여
+    이를 데이터프레임에 새로운 열로 추가하고 Standardization을 선택적으로 적용하는 함수.
 
     Parameters
     ----------
     df : pd.DataFrame
-        원본 데이터프레임.
+        통계 값을 추가할 원본 데이터프레임. 반드시 target_axis에 해당하는 데이터가 포함되어야 함.
     target_axis : list
         통계 값을 계산할 대상 축의 이름 리스트. e.g., ['x', 'z']
+    standardized : bool, optional
+        True일 경우 Standardization을 적용하고, False일 경우 원본 값을 사용. 기본값은 True.
 
     Returns
     -------
     pd.DataFrame
-        Standardization된 통계값이 추가된 데이터프레임.
+        선택적으로 Standardization된 통계 값이 추가된 데이터프레임.
     """
     for axis in target_axis:
-        # 각 축에 대해 통계값 저장용 리스트 초기화
+        # 각 축에 대해 결과 리스트 초기화
         rms_values = []
         peak_values = []
         skewness_values = []
         kurtosis_values = []
-        fused_feature_values = []  
+        fused_feature_values = []
 
         # 축 데이터가 존재하는지 확인
         if axis not in df.columns:
@@ -165,9 +168,9 @@ def add_statistics(df: pd.DataFrame, target_axis: List[str]) -> pd.DataFrame:
             peak_values.append(peak)
             skewness_values.append(skew)
             kurtosis_values.append(kurt)
-            fused_feature_values.append([rms, skew, kurt]) 
+            fused_feature_values.append([rms, skew, kurt])
 
-        # 임시 데이터프레임 생성 (정규화를 위한)
+        # 임시 데이터프레임 생성
         temp_df = pd.DataFrame({
             f'{axis}_rms': rms_values,
             f'{axis}_skewness': skewness_values,
@@ -175,19 +178,26 @@ def add_statistics(df: pd.DataFrame, target_axis: List[str]) -> pd.DataFrame:
             f'{axis}_peak': peak_values
         })
 
-        # numpy 배열로 변환 후 정규화
-        temp_np_array = temp_df.to_numpy()
-        standardized_data = normalize_data(temp_np_array)
+        if is_standardize:
+            # numpy 배열로 변환 후 정규화
+            temp_np_array = temp_df.to_numpy()
+            standardized_data = normalize_data(temp_np_array)
 
-        # 정규화된 값만 데이터프레임에 추가
-        df[f'{axis}_rms'] = standardized_data[:, 0]
-        df[f'{axis}_skewness'] = standardized_data[:, 1]
-        df[f'{axis}_kurtosis'] = standardized_data[:, 2]
-        df[f'{axis}_peak'] = standardized_data[:, 3]
+            # 정규화된 값만 데이터프레임에 추가
+            df[f'{axis}_rms'] = standardized_data[:, 0]
+            df[f'{axis}_skewness'] = standardized_data[:, 1]
+            df[f'{axis}_kurtosis'] = standardized_data[:, 2]
+            df[f'{axis}_peak'] = standardized_data[:, 3]
 
-        # fused_feature값도 정규화된 값으로 갱신
-        for i in range(len(df)):
-            fused_feature_values[i] = list(standardized_data[i, :])
+            # fused_feature값도 정규화된 값으로 갱신
+            for i in range(len(df)):
+                fused_feature_values[i] = list(standardized_data[i, :])
+        else:
+            # 정규화 없이 원본 값을 추가
+            df[f'{axis}_rms'] = rms_values
+            df[f'{axis}_skewness'] = skewness_values
+            df[f'{axis}_kurtosis'] = kurtosis_values
+            df[f'{axis}_peak'] = peak_values
 
         df[f'{axis}_fused_features'] = fused_feature_values
 
@@ -268,113 +278,6 @@ def calculate_statistics(values):
 
     return peak, average, rms, crest_factor, pk2pk, skew, kurt
 
-def add_statistics(df: pd.DataFrame, target_axis: list) -> pd.DataFrame:
-    """
-    통계값을 계산한 후 Standardization을 적용하여 데이터프레임에 추가하는 함수.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        원본 데이터프레임.
-    target_axis : list
-        통계 값을 계산할 대상 축의 이름 리스트. e.g., ['x', 'z']
-
-    Returns
-    -------
-    pd.DataFrame
-        Standardization된 통계값이 추가된 데이터프레임.
-    """
-    for axis in target_axis:
-        # 각 축에 대해 통계값 저장용 리스트 초기화
-        rms_values = []
-        peak_values = []
-        skewness_values = []
-        kurtosis_values = []
-        fused_feature_values = []  
-
-        # 축 데이터가 존재하는지 확인
-        if axis not in df.columns:
-            raise ValueError(f"Target axis '{axis}' not found in DataFrame columns.")
-
-        # 통계 값 계산
-        for sample in df[axis]:
-            peak, _, rms, _, _, skew, kurt = calculate_statistics(sample)
-            rms_values.append(rms)
-            peak_values.append(peak)
-            skewness_values.append(skew)
-            kurtosis_values.append(kurt)
-            fused_feature_values.append([rms, skew, kurt]) 
-
-        # 임시 데이터프레임 생성 (정규화를 위한)
-        temp_df = pd.DataFrame({
-            f'{axis}_rms': rms_values,
-            f'{axis}_skewness': skewness_values,
-            f'{axis}_kurtosis': kurtosis_values,
-        })
-
-        # 정규화 (Standardization)
-        scaler = StandardScaler()
-        standardized_data = scaler.fit_transform(temp_df)
-
-        # 정규화된 값만 데이터프레임에 추가
-        df[f'{axis}_rms'] = standardized_data[:, 0]
-        df[f'{axis}_skewness'] = standardized_data[:, 1]
-        df[f'{axis}_kurtosis'] = standardized_data[:, 2]
-
-        for i in range(len(df)):
-            fused_feature_values[i] = list(standardized_data[i, :])
-
-        df[f'{axis}_fused_features'] = fused_feature_values
-
-    return df
-
-# def add_statistics(df: pd.DataFrame, target_axis: List[str]) -> pd.DataFrame:
-    # """
-    # 주어진 데이터프레임에서 특정 축에 대해 통계적 특성을 계산하여
-    # 이를 데이터프레임에 새로운 열로 추가하는 함수.
-
-    # Parameters
-    # ----------
-    # df : pd.DataFrame
-    #     통계 값을 추가할 원본 데이터프레임. 반드시 target_axis에 해당하는 데이터가 포함되어야 함.
-    # target_axis : list
-    #     통계 값을 계산할 대상 축의 이름 리스트. e.g. ['x', 'z']
-
-    # Returns
-    # -------
-    # pd.DataFrame
-    #     통계 값이 추가된 데이터프레임. 
-    # """
-    # for axis in target_axis:
-    #     # 각 축에 대해 결과 리스트 초기화
-    #     rms_values = []
-    #     peak_values = []
-    #     skewness_values = []
-    #     kurtosis_values = []
-    #     fused_feature_values = []
-
-    #     # 축 데이터가 존재하는지 확인
-    #     if axis not in df.columns:
-    #         raise ValueError(f"Target axis '{axis}' not found in DataFrame columns.")
-
-    #     # 통계 값 계산
-    #     for sample in df[axis]:
-    #         peak, _, rms, _, _, skew, kurt = calculate_statistics(sample)
-    #         rms_values.append(rms)
-    #         peak_values.append(peak)
-    #         skewness_values.append(skew)
-    #         kurtosis_values.append(kurt)
-    #         fused_feature_values.append([rms, skew, kurt])
-
-
-    #     # 통계 값 추가
-    #     df[f'{axis}_rms'] = rms_values
-    #     df[f'{axis}_peak'] = peak_values
-    #     df[f'{axis}_skewness'] = skewness_values
-    #     df[f'{axis}_kurtosis'] = kurtosis_values
-    #     df[f'{axis}_fused_features'] = fused_feature_values
-
-    # return df
 
 def get_data_label(df: pd.DataFrame, target: str) -> Tuple[np.ndarray, np.ndarray]:
     """

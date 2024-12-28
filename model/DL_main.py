@@ -8,14 +8,29 @@ from sklearn.metrics import classification_report
 from funs.databuilder import make_dataframe, augment_dataframe, add_statistics, get_data_label
 from funs.utils import set_seed, load_yaml, get_dir_list, log_results, calculate_result
 from funs.draw import get_stat_hist_pic, get_displacement_pic
-from funs.models.ann import ANN
-from funs.Trainer import Trainer
+from funs.DLTrainer import Trainer
+from funs.models.wdcnn import WDCNN
+
+from sklearn.model_selection import train_test_split
+from torch.utils.data import DataLoader, TensorDataset
+
+import torch
 
 import numpy as np
 
 import datetime
 
+import numpy as np
+import torch
+from sklearn.metrics import classification_report
+from scipy import stats
 
+def calculate_confidence_interval(data, confidence=0.95):
+    """95% 신뢰구간 계산"""
+    mean = np.mean(data)
+    stderr = np.std(data) / np.sqrt(len(data))
+    margin_of_error = stderr * stats.t.ppf((1 + confidence) / 2., len(data)-1)
+    return mean, margin_of_error
 
 def main(
         yaml_config, target_config, save_feature_figs=False, save_model=False, 
@@ -26,7 +41,6 @@ def main(
     # 1. initialize              #
     ##############################
     set_seed(yaml_config.seed)
-
 
     ##############################
     # 2. preprocessing           #
@@ -46,32 +60,7 @@ def main(
     print("총 데이터 개수:", len(statistics_df))
     fault_type_counts = statistics_df["fault_type"].value_counts()
     print(f"결함 별 데이터 개수:\n{fault_type_counts}") 
-    
 
-    ##############################
-    # 3. plot figs (optional)    #
-    ##############################
-    # 변위 데이터 플롯
-    if len(target_config['axis']) == 1:
-        axis_name = target_config['axis'][0]
-    elif len(target_config['axis']) == 2:
-        axis_name = f"{target_config['axis'][0]}, {target_config['axis'][1]}"
-
-    if len(target_config['date']) == 1:
-        date_name = target_config['date'][0]
-    else:
-        date_name = 'All'
-
-    if save_displacement_figs:
-        get_displacement_pic(statistics_df, axis_name, target_config['date'])
-
-    # 특징별 분포 히스토그램 플롯
-    if save_feature_figs:
-        date_str = "_".join([str(date) for date in target_config["date"]])
-        get_stat_hist_pic(statistics_df, 
-                          main_title=f'{date_name} feature distribution, {axis_name} axis, Front view',
-                          draw_targets=list(statistics_df.columns),
-                          save_path=f'{yaml_config.feature_figs_dir}/{axis_name}_axis/{date_str}_feature_distribution_peak_rms.png')
     
     ##############################
     # 4. train                   #
@@ -80,15 +69,33 @@ def main(
     X, Y = get_data_label(statistics_df, target_config['input_feature'])
     print(f'input feature: {target_config["input_feature"]}')
 
-    model = ANN()
-    trainer = Trainer(yaml_config)
-    
-    accuracies, losses, all_y_true, all_y_pred = trainer.kfold_training(X, Y, model)
+    # PyTorch Tensor로 변환
+    data_tensor = torch.tensor(X, dtype=torch.float32).unsqueeze(1)  # Conv1d 입력 맞춤
+    label_tensor = torch.tensor(Y, dtype=torch.long)
+
+
+    # DataLoader 생성
+    dataset = TensorDataset(data_tensor, label_tensor)
+    dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
+
+    # 모델 초기화
+    model = WDCNN(first_kernel=64, n_classes=len(set(Y)))
+
+
+    trainer = Trainer()
+
+    # 훈련 수행
+    accuracies, losses, all_y_true, all_y_pred = trainer.kfold_training(model, dataloader, yaml_config.epochs)
     mean_accuracy, accuracy_confidence_interval, mean_loss, loss_confidence_interval = calculate_result(accuracies, losses)
 
-    # 전체 테스트 결과를 기반으로 성능 보고서 출력
-    all_y_true = np.concatenate(all_y_true, axis=0)
-    all_y_pred = np.concatenate(all_y_pred, axis=0)
+    ##############################
+    # 5. 성능 평가               #
+    ##############################
+    # print(all_y_true)
+    # print(all_y_pred)
+
+    all_y_true = np.concatenate([np.concatenate(arrays) for arrays in all_y_true])
+    all_y_pred = np.concatenate([np.concatenate(arrays) for arrays in all_y_pred])
 
     report = classification_report(all_y_true, all_y_pred, target_names=['B', 'H', 'IR', 'OR'], digits=4)
     print('클래스별 성능 보고서')
@@ -147,7 +154,7 @@ if __name__ == "__main__":
         # 'RPM': '1200',            # optional
         'view': 'F',                # optional
         'axis': ['z'],              # 필수. ['z'] or ['x'] or ['z', 'x'] 
-        'input_feature': 'z_fused_features'    # 필수. 모델 input feature로 사용할 데이터
+        'input_feature': 'z'    # 필수. 모델 input feature로 사용할 데이터
     }
 
     yaml_config = load_yaml('./model_config.yaml')
