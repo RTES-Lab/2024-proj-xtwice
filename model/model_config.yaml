@@ -41,10 +41,11 @@ conversion_factors:
 sample_size: 2048
 overlap: 1024
 
-# 랜덤포레스트 관련 파라미터 
-n_estimators: 100
-max_depth: 10
+# # 랜덤포레스트 관련 파라미터 
+# n_estimators: 100
+# max_depth: 10
 
 # 훈련 관련 파라미터
 epochs: 50
 batch_size: 128
+lr: 0.001

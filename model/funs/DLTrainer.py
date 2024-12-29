@@ -13,9 +13,10 @@ import torch
 from torch.nn import CrossEntropyLoss
 from torch.optim import Adam
 
-class Trainer:
-    def __init__(self):
+class DLTrainer:
+    def __init__(self, yaml_config):
         self.history = []
+        self.yaml_config = yaml_config
 
     def train_step(self, model, train_loader, optimizer, criterion, device):
         model.train()
@@ -61,12 +62,12 @@ class Trainer:
         val_accuracy = correct / total
         return val_loss, val_accuracy, all_y_true, all_y_pred
 
-    def kfold_training(self, model, data_loader, num_epochs, num_folds=10):
+    def kfold_training(self, model, data_loader, n_splits=10):
         # KFold 초기화
-        kfold = KFold(n_splits=num_folds, shuffle=True)
+        kfold = KFold(n_splits=n_splits, shuffle=True)
         dataset = data_loader.dataset  # 전체 데이터를 가져옴
 
-        print(f"Starting {num_folds}-Fold Cross Validation")
+        print(f"Starting {n_splits}-Fold Cross Validation")
 
         accuracies = []
         losses = []
@@ -85,20 +86,19 @@ class Trainer:
 
             # 모델 초기화 (각 fold마다 새로운 모델)
             model_instance = model.get_model(n_classes=4)
-            optimizer = Adam(model_instance.parameters(), lr=0.001)
+            optimizer = Adam(model_instance.parameters(), lr=self.yaml_config.lr)
             criterion = CrossEntropyLoss()
 
-            # GPU 사용 가능하면 이동
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             model_instance.to(device)
 
-            for epoch in range(num_epochs):
+            for epoch in range(self.yaml_config.epochs):
                 # Training Step
                 train_loss = self.train_step(model_instance, train_loader, optimizer, criterion, device)
 
             val_loss, val_accuracy, y_true, y_pred = self.validate_step(model_instance, val_loader, criterion, device)
 
-            print(f"\nEpoch [{epoch + 1}/{num_epochs}] - Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Val Accuracy: {val_accuracy:.4f}")
+            print(f"\nEpoch [{epoch + 1}/{self.yaml_config.epochs}] - Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Val Accuracy: {val_accuracy:.4f}")
 
             # 기록 저장
             self.history.append({

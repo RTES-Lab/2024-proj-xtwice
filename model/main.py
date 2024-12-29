@@ -23,13 +23,13 @@ def main(
         ):
     
     ##############################
-    # 1. initialize              #
+    # 1. initialize              
     ##############################
     set_seed(yaml_config.seed)
 
 
     ##############################
-    # 2. preprocessing           #
+    # 2. preprocessing           
     ##############################
     directory_list = [os.path.join(yaml_config.output_dir, date) for date in target_config['date']]
     directory = get_dir_list(directory_list, target_view=target_config['view'])
@@ -49,7 +49,7 @@ def main(
     
 
     ##############################
-    # 3. plot figs (optional)    #
+    # 3. plot figs (optional)    
     ##############################
     # 변위 데이터 플롯
     if len(target_config['axis']) == 1:
@@ -74,7 +74,7 @@ def main(
                           save_path=f'{yaml_config.feature_figs_dir}/{axis_name}_axis/{date_str}_feature_distribution_peak_rms.png')
     
     ##############################
-    # 4. train                   #
+    # 4. train                   
     ##############################
     # 데이터, 라벨 얻기
     X, Y = get_data_label(statistics_df, target_config['input_feature'])
@@ -106,7 +106,7 @@ def main(
 
 
     ##############################
-    # 5. save                    #
+    # 5. save                    
     ##############################
     if save_log:
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

@@ -1,49 +1,29 @@
 # main.py
 
 import os
+import datetime
+
+import torch
+from torch.utils.data import DataLoader, TensorDataset
+import numpy as np
 
 import tensorflow as tf
 from sklearn.metrics import classification_report
 
 from funs.databuilder import make_dataframe, augment_dataframe, add_statistics, get_data_label
 from funs.utils import set_seed, load_yaml, get_dir_list, log_results, calculate_result
-from funs.draw import get_stat_hist_pic, get_displacement_pic
-from funs.DLTrainer import Trainer
+from funs.DLTrainer import DLTrainer
 from funs.models.wdcnn import WDCNN
 
-from sklearn.model_selection import train_test_split
-from torch.utils.data import DataLoader, TensorDataset
-
-import torch
-
-import numpy as np
-
-import datetime
-
-import numpy as np
-import torch
-from sklearn.metrics import classification_report
-from scipy import stats
-
-def calculate_confidence_interval(data, confidence=0.95):
-    """95% 신뢰구간 계산"""
-    mean = np.mean(data)
-    stderr = np.std(data) / np.sqrt(len(data))
-    margin_of_error = stderr * stats.t.ppf((1 + confidence) / 2., len(data)-1)
-    return mean, margin_of_error
-
-def main(
-        yaml_config, target_config, save_feature_figs=False, save_model=False, 
-        save_log=False, save_displacement_figs=False
-        ):
+def main(yaml_config, target_config, save_model=False, save_log=False):
     
     ##############################
-    # 1. initialize              #
+    # 1. initialize              
     ##############################
     set_seed(yaml_config.seed)
 
     ##############################
-    # 2. preprocessing           #
+    # 2. preprocessing           
     ##############################
     directory_list = [os.path.join(yaml_config.output_dir, date) for date in target_config['date']]
     directory = get_dir_list(directory_list, target_view=target_config['view'])
@@ -61,38 +41,32 @@ def main(
     fault_type_counts = statistics_df["fault_type"].value_counts()
     print(f"결함 별 데이터 개수:\n{fault_type_counts}") 
 
+    ##############################
+    # 3. plot figs - 삭제        
+    ##############################
     
     ##############################
-    # 4. train                   #
+    # 4. train                   
     ##############################
     # 데이터, 라벨 얻기
     X, Y = get_data_label(statistics_df, target_config['input_feature'])
     print(f'input feature: {target_config["input_feature"]}')
 
+
     # PyTorch Tensor로 변환
     data_tensor = torch.tensor(X, dtype=torch.float32).unsqueeze(1)  # Conv1d 입력 맞춤
     label_tensor = torch.tensor(Y, dtype=torch.long)
 
-
     # DataLoader 생성
     dataset = TensorDataset(data_tensor, label_tensor)
-    dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=yaml_config.batch_size, shuffle=True)
 
-    # 모델 초기화
-    model = WDCNN(first_kernel=64, n_classes=len(set(Y)))
-
-
-    trainer = Trainer()
+    model = WDCNN(n_classes=len(set(Y)))
+    trainer = DLTrainer(yaml_config)
 
     # 훈련 수행
-    accuracies, losses, all_y_true, all_y_pred = trainer.kfold_training(model, dataloader, yaml_config.epochs)
+    accuracies, losses, all_y_true, all_y_pred = trainer.kfold_training(model, dataloader)
     mean_accuracy, accuracy_confidence_interval, mean_loss, loss_confidence_interval = calculate_result(accuracies, losses)
-
-    ##############################
-    # 5. 성능 평가               #
-    ##############################
-    # print(all_y_true)
-    # print(all_y_pred)
 
     all_y_true = np.concatenate([np.concatenate(arrays) for arrays in all_y_true])
     all_y_pred = np.concatenate([np.concatenate(arrays) for arrays in all_y_pred])
@@ -131,7 +105,7 @@ def main(
             report=report,
         )
 
-    # 모델 저장
+    # TODO
     if save_model:
         converter = tf.lite.TFLiteConverter.from_keras_model(model)
         tflite_model = converter.convert()
@@ -159,4 +133,4 @@ if __name__ == "__main__":
 
     yaml_config = load_yaml('./model_config.yaml')
 
-    main(yaml_config, target_config, save_feature_figs=False, save_model=False, save_log=False)
+    main(yaml_config, target_config, save_model=False, save_log=True)
