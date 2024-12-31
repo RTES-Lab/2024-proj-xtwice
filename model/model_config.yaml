@@ -2,7 +2,7 @@ seed: 42
 
 output_dir: '../MDPS-vis-master/output'
 model_dir: './saved'
-log_txt: './experiment_results.txt'
+log_txt: './log/experiment_results.txt'
 feature_figs_dir: './feature_distribution_figs'
 
 axis_to_csv_dic:

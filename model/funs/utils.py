@@ -134,6 +134,9 @@ def calculate_result(accuracy, loss):
         mean_loss = np.mean(loss)
         loss_variance = np.var(loss)
 
+        accuracy_confidence_interval = [0.0, 0.0]
+        loss_confidence_interval = [0.0, 0.0]
+
         # 신뢰구간 계산
         if accuracy_variance > 0:
             accuracy_confidence_interval = stats.t.interval(0.95, len(accuracy)-1, loc=mean_accuracy, scale=stats.sem(accuracy))
