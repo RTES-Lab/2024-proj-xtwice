@@ -8,11 +8,6 @@ from sklearn.model_selection import KFold
 import numpy as np
 from tqdm import tqdm
 
-from sklearn.model_selection import KFold
-import torch
-from torch.nn import CrossEntropyLoss
-from torch.optim import Adam
-
 class DLTrainer:
     def __init__(self, yaml_config):
         self.history = []
@@ -115,5 +110,70 @@ class DLTrainer:
             all_y_pred.append(y_pred)
 
         print("Training completed across all folds.")
-        return accuracies, losses, all_y_true, all_y_pred
+        return accuracies, losses, all_y_true, all_y_pred, model_instance
+    
+    def get_best_model(self, model, data_loader, n_splits=10):
+        """최고 성능의 모델을 반환하는 메소드"""
+        kfold = KFold(n_splits=n_splits, shuffle=True)
+        dataset = data_loader.dataset
 
+        print(f"Starting {n_splits}-Fold Cross Validation to find best model")
+
+        best_accuracy = 0.0
+        best_model_state = None
+        best_fold_history = None
+
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        criterion = CrossEntropyLoss()
+
+        # Fold별 훈련
+        for fold, (train_idx, val_idx) in enumerate(tqdm(kfold.split(dataset), total=kfold.get_n_splits())):
+            # Train/Validation 데이터 분리
+            train_subset = torch.utils.data.Subset(dataset, train_idx)
+            val_subset = torch.utils.data.Subset(dataset, val_idx)
+
+            train_loader = DataLoader(train_subset, batch_size=data_loader.batch_size, shuffle=True)
+            val_loader = DataLoader(val_subset, batch_size=data_loader.batch_size, shuffle=False)
+
+            # 모델 초기화
+            model_instance = model.get_model(n_classes=4)
+            model_instance.to(device)
+            optimizer = Adam(model_instance.parameters(), lr=self.yaml_config.lr)
+
+            fold_history = []
+
+            # 학습 수행
+            for epoch in range(self.yaml_config.epochs):
+                train_loss = self.train_step(model_instance, train_loader, optimizer, criterion, device)
+                val_loss, val_accuracy, _, _ = self.validate_step(model_instance, val_loader, criterion, device)
+
+                fold_history.append({
+                    'epoch': epoch + 1,
+                    'train_loss': train_loss,
+                    'val_loss': val_loss,
+                    'val_accuracy': val_accuracy
+                })
+
+                # 최고 성능 모델 갱신
+                if val_accuracy > best_accuracy:
+                    best_accuracy = val_accuracy
+                    best_model_state = model_instance.state_dict()
+                    best_fold_history = {
+                        'fold': fold + 1,
+                        'epoch': epoch + 1,
+                        'train_loss': train_loss,
+                        'val_loss': val_loss,
+                        'val_accuracy': val_accuracy
+                    }
+                    print(f"\nNew best model found! Fold: {fold+1}, Epoch: {epoch+1}, Accuracy: {val_accuracy:.4f}")
+
+        # 최고 성능 모델 복원
+        best_model = model.get_model(n_classes=4)
+        best_model.load_state_dict(best_model_state)
+
+        print(f"\nBest model selection completed.")
+        print(f"Best model performance - Fold: {best_fold_history['fold']}, "
+            f"Epoch: {best_fold_history['epoch']}, "
+            f"Accuracy: {best_fold_history['val_accuracy']:.4f}")
+
+        return best_model, best_fold_history

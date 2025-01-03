@@ -13,19 +13,19 @@ class WDCNN(nn.Module):
             #Pool1
             torch.nn.MaxPool1d(2, 2),
             #Conv2
-            torch.nn.Conv1d(16, 32, 3, stride=1, padding='same'),
+            torch.nn.Conv1d(16, 32, 3, stride=1, padding=1),
             torch.nn.BatchNorm1d(32),
             torch.nn.ReLU(),
             #Pool2
             torch.nn.MaxPool1d(2, 2),
             #Conv3
-            torch.nn.Conv1d(32, 64, 3, stride=1, padding='same'),
+            torch.nn.Conv1d(32, 64, 3, stride=1, padding=1),
             torch.nn.BatchNorm1d(64),
             torch.nn.ReLU(),
             #Pool3
             torch.nn.MaxPool1d(2, 2),
             #Conv4
-            torch.nn.Conv1d(64, 64, 3, stride=1, padding='same'),
+            torch.nn.Conv1d(64, 64, 3, stride=1, padding=1),
             torch.nn.BatchNorm1d(64),
             torch.nn.ReLU(),
             #Pool4

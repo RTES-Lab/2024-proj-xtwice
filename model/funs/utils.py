@@ -10,9 +10,13 @@ from box import Box
 from typing import List, Optional, Union
 
 import torch
-import tensorflow as tf
+from torch.export import export
+from executorch.exir import to_edge
 import numpy as np
 import scipy.stats as stats
+
+from datetime import datetime
+
 
 def load_yaml(config_path: str) -> Box:
     """
@@ -47,7 +51,7 @@ def set_seed(seed: int):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    tf.random.set_seed(seed) 
+    # tf.random.set_seed(seed) 
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
 
@@ -151,3 +155,43 @@ def calculate_result(accuracy, loss):
             print(f"손실: {mean_loss:.4f} (변동이 없어 신뢰구간을 계산할 수 없습니다.)")
 
     return mean_accuracy, accuracy_confidence_interval, mean_loss, loss_confidence_interval
+
+def export_to_executorch(model, input_shape, save_path):
+
+    """모델을 ExecuTorch 포맷으로 변환하고 저장"""
+    current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+    save_path = os.path.join(save_path, f'wdcnn_{current_time}')
+
+    device = torch.device('cpu')
+    model = model.to(device)
+    model.eval()
+    
+    # 더미 입력 생성 (input_shape는 튜플이므로 이를 언팩하여 사용)
+    dummy_input = torch.randn(input_shape).to(device)
+
+    try:
+        aten_dialect = export(model, (dummy_input,))
+        print("Export successful!")
+    except Exception as e:
+        print(f"Export error: {e}")
+        return
+
+    try:
+        print("Converting to Edge program...")
+        edge_program = to_edge(aten_dialect)
+        print("Edge program conversion successful!")
+    except Exception as e:
+        print(f"Edge conversion error: {e}")
+        return
+
+    try:
+        print("Converting to ExecuTorch program...")
+        executorch_program = edge_program.to_executorch()
+        print("ExecuTorch program conversion successful!")
+    except Exception as e:
+        print(f"ExecuTorch conversion error: {e}")
+        return
+    
+    with open(f"{save_path}.pte", "wb") as file:
+        file.write(executorch_program.buffer)
+    print("save model")

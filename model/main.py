@@ -5,11 +5,7 @@ import os
 import tensorflow as tf
 from sklearn.metrics import classification_report
 
-from funs.databuilder import make_dataframe, augment_dataframe, add_statistics, get_data_label
-from funs.utils import set_seed, load_yaml, get_dir_list, log_results, calculate_result
-from funs.draw import get_stat_hist_pic, get_displacement_pic
-from funs.models.ann import ANN
-from funs.Trainer import Trainer
+import funs
 
 import numpy as np
 
@@ -25,23 +21,23 @@ def main(
     ##############################
     # 1. initialize              
     ##############################
-    set_seed(yaml_config.seed)
+    funs.set_seed(yaml_config.seed)
 
 
     ##############################
     # 2. preprocessing           
     ##############################
     directory_list = [os.path.join(yaml_config.output_dir, date) for date in target_config['date']]
-    directory = get_dir_list(directory_list, target_view=target_config['view'])
+    directory = funs.get_dir_list(directory_list, target_view=target_config['view'])
 
     # 데이터프레임 제작
-    df = make_dataframe(yaml_config, directory)
+    df = funs.make_dataframe(yaml_config, directory)
 
     # 데이터 증강
-    augmented_df = augment_dataframe(df, target_config['axis'], yaml_config.sample_size, yaml_config.overlap)
+    augmented_df = funs.augment_dataframe(df, target_config['axis'], yaml_config.sample_size, yaml_config.overlap)
 
     # 통계값 값 추가
-    statistics_df = add_statistics(augmented_df, target_config['axis'], is_standardize=True)
+    statistics_df = funs.add_statistics(augmented_df, target_config['axis'], is_standardize=True)
 
     print("총 데이터 개수:", len(statistics_df))
     fault_type_counts = statistics_df["fault_type"].value_counts()
@@ -63,12 +59,12 @@ def main(
         date_name = 'All'
 
     if save_displacement_figs:
-        get_displacement_pic(statistics_df, axis_name, target_config['date'])
+        funs.get_displacement_pic(statistics_df, axis_name, target_config['date'])
 
     # 특징별 분포 히스토그램 플롯
     if save_feature_figs:
         date_str = "_".join([str(date) for date in target_config["date"]])
-        get_stat_hist_pic(statistics_df, 
+        funs.get_stat_hist_pic(statistics_df, 
                           main_title=f'{date_name} feature distribution, {axis_name} axis, Front view',
                           draw_targets=list(statistics_df.columns),
                           save_path=f'{yaml_config.feature_figs_dir}/{axis_name}_axis/{date_str}_feature_distribution_peak_rms.png')
@@ -77,14 +73,14 @@ def main(
     # 4. train                   
     ##############################
     # 데이터, 라벨 얻기
-    X, Y = get_data_label(statistics_df, target_config['input_feature'])
+    X, Y = funs.get_data_label(statistics_df, target_config['input_feature'])
     print(f'input feature: {target_config["input_feature"]}')
 
-    model = ANN()
-    trainer = Trainer(yaml_config)
+    model = funs.ANN()
+    trainer = funs.Trainer(yaml_config)
     
     accuracies, losses, all_y_true, all_y_pred = trainer.kfold_training(X, Y, model)
-    mean_accuracy, accuracy_confidence_interval, mean_loss, loss_confidence_interval = calculate_result(accuracies, losses)
+    mean_accuracy, accuracy_confidence_interval, mean_loss, loss_confidence_interval = funs.calculate_result(accuracies, losses)
 
     # 전체 테스트 결과를 기반으로 성능 보고서 출력
     all_y_true = np.concatenate(all_y_true, axis=0)
@@ -110,7 +106,7 @@ def main(
     ##############################
     if save_log:
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        log_results(
+        funs.log_results(
             file_path = yaml_config['log_txt'],
             timestamp=current_time,
             date = target_config['date'],
@@ -150,6 +146,6 @@ if __name__ == "__main__":
         'input_feature': 'z_fused_features'    # 필수. 모델 input feature로 사용할 데이터
     }
 
-    yaml_config = load_yaml('./model_config.yaml')
+    yaml_config = funs.load_yaml('./model_config.yaml')
 
-    main(yaml_config, target_config, save_feature_figs=False, save_model=False, save_log=False)
+    main(yaml_config, target_config, save_feature_figs=False, save_model=False, save_log=True)
