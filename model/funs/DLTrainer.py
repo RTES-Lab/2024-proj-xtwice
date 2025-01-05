@@ -110,11 +110,11 @@ class DLTrainer:
             all_y_pred.append(y_pred)
 
         print("Training completed across all folds.")
-        return accuracies, losses, all_y_true, all_y_pred, model_instance
+        return accuracies, losses, all_y_true, all_y_pred
     
     def get_best_model(self, model, data_loader, n_splits=10):
         """최고 성능의 모델을 반환하는 메소드"""
-        kfold = KFold(n_splits=n_splits, shuffle=True)
+        kfold = KFold(n_splits=n_splits, shuffle=True,)  # random_state 추가로 재현성 보장
         dataset = data_loader.dataset
 
         print(f"Starting {n_splits}-Fold Cross Validation to find best model")
@@ -122,6 +122,11 @@ class DLTrainer:
         best_accuracy = 0.0
         best_model_state = None
         best_fold_history = None
+
+        accuracies = []
+        losses = []
+        all_y_true = []
+        all_y_pred = []
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         criterion = CrossEntropyLoss()
@@ -145,27 +150,36 @@ class DLTrainer:
             # 학습 수행
             for epoch in range(self.yaml_config.epochs):
                 train_loss = self.train_step(model_instance, train_loader, optimizer, criterion, device)
-                val_loss, val_accuracy, _, _ = self.validate_step(model_instance, val_loader, criterion, device)
 
-                fold_history.append({
+            # 검증 단계
+            val_loss, val_accuracy, y_true, y_pred = self.validate_step(model_instance, val_loader, criterion, device)
+
+            print(f"\nEpoch [{epoch + 1}/{self.yaml_config.epochs}] - Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Val Accuracy: {val_accuracy:.4f}")
+
+            fold_history.append({
+                'epoch': epoch + 1,
+                'train_loss': train_loss,
+                'val_loss': val_loss,
+                'val_accuracy': val_accuracy
+            })
+
+            # 최고 성능 모델 갱신
+            if val_accuracy > best_accuracy:
+                best_accuracy = val_accuracy
+                best_model_state = model_instance.state_dict()
+                best_fold_history = {
+                    'fold': fold + 1,
                     'epoch': epoch + 1,
                     'train_loss': train_loss,
                     'val_loss': val_loss,
                     'val_accuracy': val_accuracy
-                })
+                }
+                print(f"\nNew best model found! Fold: {fold + 1}, Epoch: {epoch + 1}, Accuracy: {val_accuracy:.4f}")
 
-                # 최고 성능 모델 갱신
-                if val_accuracy > best_accuracy:
-                    best_accuracy = val_accuracy
-                    best_model_state = model_instance.state_dict()
-                    best_fold_history = {
-                        'fold': fold + 1,
-                        'epoch': epoch + 1,
-                        'train_loss': train_loss,
-                        'val_loss': val_loss,
-                        'val_accuracy': val_accuracy
-                    }
-                    print(f"\nNew best model found! Fold: {fold+1}, Epoch: {epoch+1}, Accuracy: {val_accuracy:.4f}")
+            accuracies.append(val_accuracy)
+            losses.append(val_loss)
+            all_y_true.append(y_true)
+            all_y_pred.append(y_pred)
 
         # 최고 성능 모델 복원
         best_model = model.get_model(n_classes=4)
@@ -176,4 +190,6 @@ class DLTrainer:
             f"Epoch: {best_fold_history['epoch']}, "
             f"Accuracy: {best_fold_history['val_accuracy']:.4f}")
 
-        return best_model, best_fold_history
+        return accuracies, losses, all_y_true, all_y_pred, best_model, best_fold_history
+
+
