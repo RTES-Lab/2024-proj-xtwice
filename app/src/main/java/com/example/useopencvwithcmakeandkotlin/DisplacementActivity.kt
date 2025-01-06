@@ -322,12 +322,21 @@ class DisplacementActivity : AppCompatActivity() {
         // 변위 데이터 확인
         Log.d("DisplacementActivity", "총 측정된 변위 데이터 수: ${displacements.size}")
 
+        val avgX = displacements.map { it.first }.average().toFloat()
+        val avgY = displacements.map { it.second }.average().toFloat()
+        Log.d("DisplacementActivity", "변위 평균값 계산됨: X = $avgX, Y = $avgY")
+
+        val adjustedDisplacements = displacements.map {
+            Pair(it.first - avgX, it.second - avgY)
+        }
+
+
         runOnUiThread {
             statusTextView.text = "CSV 파일 저장 중..."
         }
 
         if (displacements.isNotEmpty()) {
-            saveDisplacementsToCSV(displacements)
+            saveDisplacementsToCSV(adjustedDisplacements)
             runOnUiThread {
                 statusTextView.text = "저장 완료! (${displacements.size}개 데이터)"
             }
@@ -365,24 +374,25 @@ class DisplacementActivity : AppCompatActivity() {
         if (!appFolder.exists()) {
             appFolder.mkdirs()
         }
-        
+
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val csvFile = File(appFolder, "displacement_${timeStamp}.csv")
-        
+
         try {
             FileWriter(csvFile).use { writer ->
                 // 헤더에 FPS 정보 추가
                 writer.append("# FPS: $fps\n")
-                writer.append("Frame,Time(s),DisplacementX(px),DisplacementY(px)\n")
-                displacements.forEachIndexed { index, (dx, dy) ->
+                writer.append("Frame,Time(s),DisplacementX(px),DisplacementZ(px)\n")
+                displacements.forEachIndexed { index, (dx, dz) ->
                     val timeInSeconds = index / fps
-                    writer.append("$index,$timeInSeconds,$dx,$dy\n")
+                    writer.append("$index,$timeInSeconds,$dx,$dz\n")
                 }
             }
-            
+
             runOnUiThread {
                 showShareButton(csvFile)
                 Toast.makeText(this, "CSV 파일이 저장되었습니다: ${csvFile.absolutePath}", Toast.LENGTH_LONG).show()
+                showInferenceButton(csvFile)
             }
         } catch (e: IOException) {
             e.printStackTrace()
@@ -480,6 +490,18 @@ class DisplacementActivity : AppCompatActivity() {
         }
         return null
     }
+
+    private fun showInferenceButton(file: File) {
+        val inferenceButton = findViewById<Button>(R.id.inferenceButton)
+        inferenceButton.visibility = View.VISIBLE
+        inferenceButton.setOnClickListener {
+            val intent = Intent(this, FaultDiagnosisActivity::class.java).apply {
+                putExtra("csvFileUri", Uri.fromFile(file).toString())
+            }
+            startActivity(intent)
+        }
+    }
+
 
     private fun isExternalStorageDocument(uri: Uri) =
         "com.android.externalstorage.documents" == uri.authority

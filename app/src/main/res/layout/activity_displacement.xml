@@ -33,4 +33,12 @@
         android:text="CSV 파일 공유"
         android:visibility="gone" />
 
+    <Button
+        android:id="@+id/inferenceButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="추론하기"
+        android:visibility="gone" />
+
 </LinearLayout>

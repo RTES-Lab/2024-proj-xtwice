@@ -5,11 +5,11 @@
     <!-- Android 13 (API 33) 이상을 위한 권한 -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-    
+
     <!-- Android 12 이하를 위한 권한 -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>
-    
+
     <uses-permission android:name="android.permission.CAMERA" />
 
     <application
@@ -52,6 +52,10 @@
 
         <activity
             android:name=".MarkerColorActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".FaultDiagnosisActivity"
             android:exported="false" />
 
     </application>
