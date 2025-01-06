@@ -10,7 +10,7 @@ from tqdm import tqdm
 from box import Box
 from typing import List, Tuple, Optional
 
-from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.preprocessing import LabelEncoder
 
 def make_dataframe(
         config: Box, directory_list: List[str], target_marker: Optional[str] = 'A', max_len: Optional[int] = None
@@ -40,7 +40,6 @@ def make_dataframe(
     df['fault_type'] = []
     df['label'] = []
 
-    # conversion_factors = config.conversion_factors
     label_dic = config.label_dic
 
     for sub_dirs in tqdm(sorted(directory_list)):
@@ -71,15 +70,6 @@ def make_dataframe(
                 data = pd.read_csv(file).iloc[:max_len, 0].values
             if target_marker == 'B':
                 data = pd.read_csv(file).iloc[:max_len, 1].values
-
-            # if int(date) < 1100:
-                # conversion_factor = conversion_factors.get(date, {}).get(view, 1)
-            # elif int(date) == 1105 or int(date) == 1217:
-                # conversion_factor = conversion_factors.get(date, {}).get(view, 1).get(fault_type, 1)
-            # else:
-                # conversion_factor = conversion_factors.get(date, {}).get(view, 1).get(target_marker, 1)
-
-            # data = data * conversion_factor
             data -= np.mean(data)
 
             df[axis].append(np.array(data))
@@ -204,7 +194,6 @@ def add_statistics(df: pd.DataFrame, target_axis: List[str], is_standardize: boo
     return df
 
 
-
 def augment_dataframe(
         df: pd.DataFrame, target_axes: list, sample_size: int = 2048, overlap: int = 1024
         ) -> pd.DataFrame:
@@ -300,8 +289,8 @@ def get_data_label(df: pd.DataFrame, target: str) -> Tuple[np.ndarray, np.ndarra
     df['fault_type_encoded'] = label_encoder.fit_transform(df['fault_type'])
 
     # print("클래스 이름과 레이블 매핑:")
-    for class_name, label in zip(label_encoder.classes_, range(len(label_encoder.classes_))):
-        print(f"{class_name}: {label}")
+    # for class_name, label in zip(label_encoder.classes_, range(len(label_encoder.classes_))):
+    #     print(f"{class_name}: {label}")
     
     Y = df['fault_type_encoded'].values
     

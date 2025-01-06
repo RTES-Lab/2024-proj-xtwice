@@ -10,12 +10,9 @@ from box import Box
 from typing import List, Optional, Union
 
 import torch
-from torch.export import export
-# from executorch.exir import to_edge
 import numpy as np
+import pandas as pd
 import scipy.stats as stats
-
-from datetime import datetime
 
 
 def load_yaml(config_path: str) -> Box:
@@ -113,6 +110,9 @@ def log_results(
         file_path, timestamp, date, input_feature, mean_accuracy, accuracy_confidence_interval, 
         mean_loss, loss_confidence_interval, class2label_dic, class_accuracies, report
                 ):
+    """
+    결과를 텍스트파일에 로깅하는 함수
+    """
     with open(file_path, 'a', encoding='utf-8') as file:  # 'a' 모드로 열어 기존 파일에 이어 쓰기
         file.write("====================================================\n")
         file.write(f"Timestamp: {timestamp}\n")
@@ -132,6 +132,9 @@ def log_results(
 
 
 def calculate_result(accuracy, loss):
+    """
+    평균 정확도와 손실, 신뢰구간을 계산하는 함수
+    """
     if len(accuracy) > 1:
         mean_accuracy = np.mean(accuracy)
         accuracy_variance = np.var(accuracy)
@@ -156,42 +159,73 @@ def calculate_result(accuracy, loss):
 
     return mean_accuracy, accuracy_confidence_interval, mean_loss, loss_confidence_interval
 
-# def export_to_executorch(model, input_shape, save_path):
+def get_random_fault_data(df: pd.DataFrame):
+    """
+    랜덤한 2048개의 데이터를 선택하는 함수
 
-#     """모델을 ExecuTorch 포맷으로 변환하고 저장"""
-#     current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
-#     save_path = os.path.join(save_path, f'wdcnn_{current_time}')
-
-#     device = torch.device('cpu')
-#     model = model.to(device)
-#     model.eval()
+    Note
+    ------
+    해당 함수를 수행할 땐 랜덤시드를 고정하지 말 것
+    """
+    random_index = random.randint(0, len(df) - 1)
     
-#     # 더미 입력 생성 (input_shape는 튜플이므로 이를 언팩하여 사용)
-#     dummy_input = torch.randn(input_shape).to(device)
-
-#     try:
-#         aten_dialect = export(model, (dummy_input,))
-#         print("Export successful!")
-#     except Exception as e:
-#         print(f"Export error: {e}")
-#         return
-
-#     try:
-#         print("Converting to Edge program...")
-#         edge_program = to_edge(aten_dialect)
-#         print("Edge program conversion successful!")
-#     except Exception as e:
-#         print(f"Edge conversion error: {e}")
-#         return
-
-#     try:
-#         print("Converting to ExecuTorch program...")
-#         executorch_program = edge_program.to_executorch()
-#         print("ExecuTorch program conversion successful!")
-#     except Exception as e:
-#         print(f"ExecuTorch conversion error: {e}")
-#         return
+    row = df.iloc[random_index]
+    fault_class = row["fault_type_encoded"]
+    z_data = row["z"]
     
-#     with open(f"{save_path}.pte", "wb") as file:
-#         file.write(executorch_program.buffer)
-#     print("save model")
+    if len(z_data) < 2048:
+        raise ValueError("z 데이터가 2048개 이상이어야 합니다.")
+    
+    # z 데이터에서 랜덤한 시작 인덱스 선택
+    start_idx = random.randint(0, len(z_data) - 2048)
+    selected_z = z_data[start_idx:start_idx + 2048]
+    
+    return random_index, fault_class, selected_z
+
+
+def predict_with_ptl(model_path: str, data: List):
+    # 모델 로드
+    loaded_model = torch.jit.load(model_path)
+    loaded_model.eval()
+
+    # 입력 데이터 텐서로 변환
+    data_tensor = torch.tensor(data, dtype=torch.float32).unsqueeze(0).unsqueeze(1)
+
+    # 예측 수행
+    with torch.no_grad():
+        outputs = loaded_model(data_tensor) 
+        predictions = torch.argmax(outputs, dim=1)  
+
+    return predictions
+
+
+def predict_with_torch(best_model: torch.nn.Module, data: List):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    best_model = best_model.to(device)
+    best_model.eval()
+
+    # PyTorch 텐서로 변환
+    data_tensor = torch.tensor(data, dtype=torch.float32).unsqueeze(0).unsqueeze(1)
+    data_tensor = data_tensor.to(device)
+    
+    # 예측 수행
+    with torch.no_grad():
+        outputs = best_model(data_tensor)
+        outputs = outputs.to(device)
+        _, predictions = torch.max(outputs, 1)
+
+    return predictions
+
+
+def compare_torch_n_ptl(df: pd.DataFrame, ptl_model: str, torch_model: torch.nn.Module):
+    random_index, fault_class, data = get_random_fault_data(df)
+
+    print()
+    print("Selected index:", random_index)
+    print("class:", fault_class)
+
+    predictions = predict_with_ptl(ptl_model, data)
+    predictions2 = predict_with_torch(torch_model, data)
+    print("Predictions with ptl:", predictions)
+    print("Predictions with torch:", predictions2)

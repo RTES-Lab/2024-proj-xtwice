@@ -1,6 +1,7 @@
 # main.py
 
 import os
+import datetime
 
 import tensorflow as tf
 from sklearn.metrics import classification_report
@@ -8,9 +9,6 @@ from sklearn.metrics import classification_report
 import funs
 
 import numpy as np
-
-import datetime
-
 
 
 def main(
@@ -53,6 +51,7 @@ def main(
     elif len(target_config['axis']) == 2:
         axis_name = f"{target_config['axis'][0]}, {target_config['axis'][1]}"
 
+    # 날짜 이름 결정(그림 제목용)
     if len(target_config['date']) == 1:
         date_name = target_config['date'][0]
     else:
@@ -122,6 +121,8 @@ def main(
 
     # 모델 저장
     if save_model:
+        dummy = np.random.random((667, 4))
+        model = model.get_model(dummy)
         converter = tf.lite.TFLiteConverter.from_keras_model(model)
         tflite_model = converter.convert()
 
@@ -148,4 +149,4 @@ if __name__ == "__main__":
 
     yaml_config = funs.load_yaml('./model_config.yaml')
 
-    main(yaml_config, target_config, save_feature_figs=False, save_model=False, save_log=True)
+    main(yaml_config, target_config, save_feature_figs=True, save_model=True, save_log=False)

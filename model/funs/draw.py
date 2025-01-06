@@ -7,19 +7,8 @@ from typing import List
 
 def get_stat_hist_pic(df: pd.DataFrame, main_title: str, draw_targets: List[str], save_path: str):
     """
-    주어진 데이터프레임에서 각 fault_type에 대한 Peak과 RMS 값의 분포를 히스토그램으로 생성하고 저장하는 함수
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        통계값이 포함된 데이터프레임
-    draw_targets: List[str]
-        데이터프레임에서 분포를 시각화하고자 하는 열 리스트
-    save_path : str
-        히스토그램 이미지를 저장할 파일 경로
+    결함 별 특징 히스토그램을 그리는 함수
     """
-    import matplotlib.pyplot as plt
-
     fault_type_list = ['H', 'OR', 'B', 'IR']
 
     # draw_targets를 rms와 peak로 분리
@@ -46,10 +35,6 @@ def get_stat_hist_pic(df: pd.DataFrame, main_title: str, draw_targets: List[str]
         plt.xticks(fontsize=25)
         plt.yticks(fontsize=25)
         plt.legend(fontsize=15, loc='upper right')  # 레이블을 그래프 오른쪽 외부로 이동
-
-    # 레이아웃 조정 및 저장
-    # plt.tight_layout(rect=[0, 0, 0.85, 0.95])  # 그래프 오른쪽에 공간 확보
-    # plt.savefig(save_path, bbox_inches='tight')
     
     plt.tight_layout()  
     plt.savefig(save_path)
@@ -58,6 +43,9 @@ def get_stat_hist_pic(df: pd.DataFrame, main_title: str, draw_targets: List[str]
 
 
 def get_displacement_pic(df: pd.DataFrame, axis: str, date: str):
+    """
+    결함 별 변위 데이터를 그리는 함수
+    """
     grouped = df.groupby('fault_type')
 
     for fault_type, group in grouped:
@@ -78,4 +66,4 @@ def get_displacement_pic(df: pd.DataFrame, axis: str, date: str):
         plt.savefig(file_name, bbox_inches='tight')
         plt.close()
 
-        print(f"Saved plot for fault_type {fault_type}: {file_name}")
+        print(f"{fault_type}의 변위 그림이 {file_name}에 저장되었습니다.")
