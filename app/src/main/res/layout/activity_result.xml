@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     tools:context=".FaultDiagnosisActivity">
 
-    <!-- 추론 결과를 표시할 TextView -->
     <TextView
         android:id="@+id/resultTextView"
         android:layout_width="wrap_content"
@@ -18,15 +17,5 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- 추론 실행 버튼 (선택 사항) -->
-    <Button
-        android:id="@+id/runModelButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Run Model"
-        app:layout_constraintTop_toBottomOf="@id/resultTextView"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

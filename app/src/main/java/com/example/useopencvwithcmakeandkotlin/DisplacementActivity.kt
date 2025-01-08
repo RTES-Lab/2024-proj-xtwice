@@ -30,7 +30,9 @@ import android.net.Uri
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.content.ContentUris
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.os.Build
 import android.widget.ImageView
 import org.opencv.android.Utils
 
@@ -51,6 +53,35 @@ class DisplacementActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_displacement)
+//
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+//            // Android 13 이상
+//            if (checkSelfPermission(android.Manifest.permission.READ_MEDIA_VIDEO) !=
+//                PackageManager.PERMISSION_GRANTED) {
+//                requestPermissions(
+//                    arrayOf(android.Manifest.permission.READ_MEDIA_VIDEO),
+//                    1001 // REQUEST_CODE
+//                )
+//                return
+//            }
+//        } else {
+//            // Android 12 이하
+//            if (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//                    checkSelfPermission(android.Manifest.permission.READ_EXTERNAL_STORAGE) !=
+//                        PackageManager.PERMISSION_GRANTED
+//                } else {
+//                    TODO("VERSION.SDK_INT < M")
+//                }
+//            ) {
+//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//                    requestPermissions(
+//                        arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
+//                        1001 // REQUEST_CODE
+//                    )
+//                }
+//                return
+//            }
+//        }
 
         progressBar = findViewById(R.id.progressBar)
         statusTextView = findViewById(R.id.statusTextView)
@@ -97,6 +128,26 @@ class DisplacementActivity : AppCompatActivity() {
         }.start()
     }
 
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            1001 -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // 권한이 승인된 경우, onCreate의 나머지 작업을 실행
+                    return
+                } else {
+                    // 권한이 거부된 경우
+                    Toast.makeText(this, "파일 접근 권한이 필요합니다", Toast.LENGTH_SHORT).show()
+                    finish()
+                }
+            }
+        }
+    }
+
     private fun measureDisplacementAndSaveCSV() {
         val fps = intent.getFloatExtra("fps", DEFAULT_FPS)
         if (fps == DEFAULT_FPS) {
@@ -131,7 +182,7 @@ class DisplacementActivity : AppCompatActivity() {
         val totalFrames = videoCapture.get(Videoio.CAP_PROP_FRAME_COUNT).toInt()
         val videoFps = videoCapture.get(Videoio.CAP_PROP_FPS)
         val duration = totalFrames / fps // 원래는 videoFps
-        
+
         Log.d("DisplacementActivity", """
             비디오 설정 정보:
             - 총 프레임 수: $totalFrames
@@ -212,7 +263,7 @@ class DisplacementActivity : AppCompatActivity() {
             Log.d("DisplacementActivity", """
                 프레임 정보:
                 - 원본 크기: ${frame.cols()}x${frame.rows()}
-                - 회전 후 크기: ${frameWidth}x${frameHeight} 
+                - 회전 후 크기: ${frameWidth}x${frameHeight}
                 - ROI: (${roiData.left}, ${roiData.top}, ${roiData.right}, ${roiData.bottom})
             """.trimIndent())
             
@@ -243,7 +294,7 @@ class DisplacementActivity : AppCompatActivity() {
                     H: ${hueRange.minVal} ~ ${hueRange.maxVal}
                     S: ${satRange.minVal} ~ ${satRange.maxVal}
                     V: ${valRange.minVal} ~ ${valRange.maxVal}
-                    
+
                     설정된 HSV 범위:
                     H: ${hsvRange.hMin} ~ ${hsvRange.hMax}
                     S: ${hsvRange.sMin} ~ ${hsvRange.sMax}
@@ -282,7 +333,7 @@ class DisplacementActivity : AppCompatActivity() {
                         - moments.m10: ${moments.m10}
                         - moments.m01: ${moments.m01}
                     """.trimIndent())
-                    
+
                     // 변위 계산 없이 현재 위치를 그대로 저장
                     displacements.add(Pair(currentX, currentY))
                 } else {
@@ -501,7 +552,6 @@ class DisplacementActivity : AppCompatActivity() {
             startActivity(intent)
         }
     }
-
 
     private fun isExternalStorageDocument(uri: Uri) =
         "com.android.externalstorage.documents" == uri.authority

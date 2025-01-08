@@ -58,6 +58,10 @@
             android:name=".FaultDiagnosisActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".TestActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

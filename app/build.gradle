@@ -61,4 +61,5 @@ dependencies {
     androidTestImplementation libs.androidx.junit
     androidTestImplementation libs.androidx.espresso.core
     implementation "org.pytorch:pytorch_android_lite:1.13.1"
+    implementation "com.opencsv:opencsv:5.6"
 }

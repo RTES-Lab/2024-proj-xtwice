@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import com.example.useopencvwithcmakeandkotlin.databinding.ActivityMainBinding
 import android.widget.Toast
@@ -19,7 +20,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        setContentView(R.layout.activity_main)
+        val testButton = findViewById<Button>(R.id.testButton)
 
         // inflate() : ActivityMainBinding 클래스의 메서드. Activity의 레이아웃 파일을 인플레이션(뷰 객체로 변환) 한다.
         // layoutInflater : Activity의 레이아웃 인플레이터(Inflater)를 가리키는 객체로,
@@ -31,6 +33,11 @@ class MainActivity : AppCompatActivity() {
         binding.galleryButton.setOnClickListener {
             val galleryIntent = Intent(Intent.ACTION_PICK, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
             startActivityForResult(galleryIntent, REQUEST_VIDEO_PICK)
+        }
+
+        binding.testButton.setOnClickListener(){
+            val nextIntent = Intent(this, TestActivity::class.java)
+            startActivity(nextIntent)
         }
     }
 

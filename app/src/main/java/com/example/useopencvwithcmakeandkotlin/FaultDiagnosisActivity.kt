@@ -26,8 +26,6 @@ class FaultDiagnosisActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_result)
 
-        var runmodelbtn = findViewById<Button>(R.id.runModelButton)
-
         // TextView에 추론 결과를 표시
         resultTextView = findViewById(R.id.resultTextView)
 
@@ -45,25 +43,26 @@ class FaultDiagnosisActivity : AppCompatActivity() {
         val csvFileName = File(csvUri.path ?: "").name
         Log.d("FaultDiagnosisActivity", "CSV 파일 이름: $csvFileName")
 
-        runmodelbtn.setOnClickListener {
-            if (displacements.size == 2048) {
-                val modelOutput = runModel(displacements)
 
-                // 로짓 값 출력
-                val probabilities = "Model Output: ${modelOutput.joinToString(", ")}"
+        if (displacements.size == 2048) {
+            val modelOutput = runModel(displacements)
 
-                // 로짓 값에서 가장 큰 값을 가진 인덱스 찾기
-                val maxLogitIndex = modelOutput.indices.maxByOrNull { modelOutput[it] } ?: -1
-                val classes = arrayOf("B", "H", "IR", "OR")
-                val predictedClass =
-                    if (maxLogitIndex != -1) classes[maxLogitIndex] else "Unknown"
+            // 로짓 값에서 가장 큰 값을 가진 인덱스 찾기
+            val maxLogitIndex = modelOutput.indices.maxByOrNull { modelOutput[it] } ?: -1
+            val classes = arrayOf("B", "H", "IR", "OR")
+            val predictedClass =
+                if (maxLogitIndex != -1) classes[maxLogitIndex] else "Unknown"
 
-                resultTextView.text =
-                    "Class Logits: \n[$probabilities]\nPredicted Class: $predictedClass"
-            } else {
-                Toast.makeText(this, "CSV 파일 데이터가 부족합니다", Toast.LENGTH_LONG).show()
-            }
+            resultTextView.text = """
+        결함 진단 결과
+        
+        예상 결함: $predictedClass
+    """.trimIndent()
+        } else {
+            Toast.makeText(this, "CSV 파일 데이터가 부족합니다", Toast.LENGTH_LONG).show()
         }
+
+
     }
 
     private fun readCSVData(uri: Uri): List<Float> {
@@ -77,7 +76,6 @@ class FaultDiagnosisActivity : AppCompatActivity() {
                     .take(2048) // 최대 2048개의 데이터만 읽음
                     .forEach { line ->
                         val values = line.split(",")
-                        println(values)
                         if (values.size >= 4) {
                             val displacementZ = values[3].toFloatOrNull() ?: 0f
                             data.add(displacementZ)
