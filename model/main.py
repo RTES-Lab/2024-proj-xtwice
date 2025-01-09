@@ -12,8 +12,8 @@ import numpy as np
 
 
 def main(
-        yaml_config, target_config, save_feature_figs=False, save_model=False, 
-        save_log=False, save_displacement_figs=False
+        yaml_config, target_config, save_model=False, 
+        save_log=False
         ):
     
     ##############################
@@ -30,69 +30,68 @@ def main(
 
     # 데이터프레임 제작
     df = funs.make_dataframe(yaml_config, directory)
+    train_df, val_df, test_df = funs.split_dataframe(df, 0.7, 0.3)
 
     # 데이터 증강
-    augmented_df = funs.augment_dataframe(df, target_config['axis'], yaml_config.sample_size, yaml_config.overlap)
+    train_df = funs.augment_dataframe(train_df, target_config['axis'], yaml_config.sample_size, yaml_config.overlap)
+    val_df = funs.augment_dataframe(val_df, target_config['axis'], yaml_config.sample_size, yaml_config.overlap)
+    test_df = funs.augment_dataframe(test_df, target_config['axis'], yaml_config.sample_size, yaml_config.overlap)
 
     # 통계값 값 추가
-    statistics_df = funs.add_statistics(augmented_df, target_config['axis'], is_standardize=True)
+    train_df, val_df, test_df = funs.add_statistics(train_df, val_df, test_df, target_config['axis'], is_standardize=True)
 
-    print("총 데이터 개수:", len(statistics_df))
-    fault_type_counts = statistics_df["fault_type"].value_counts()
+    print("총 데이터 개수:", len(train_df)+len(val_df)+len(test_df))
+    fault_type_counts = train_df["fault_type"].value_counts()
+    fault_type_counts += val_df["fault_type"].value_counts()
+    fault_type_counts += test_df["fault_type"].value_counts()
     print(f"결함 별 데이터 개수:\n{fault_type_counts}") 
     
-
     ##############################
-    # 3. plot figs (optional)    
-    ##############################
-    # 변위 데이터 플롯
-    if len(target_config['axis']) == 1:
-        axis_name = target_config['axis'][0]
-    elif len(target_config['axis']) == 2:
-        axis_name = f"{target_config['axis'][0]}, {target_config['axis'][1]}"
-
-    # 날짜 이름 결정(그림 제목용)
-    if len(target_config['date']) == 1:
-        date_name = target_config['date'][0]
-    else:
-        date_name = 'All'
-
-    if save_displacement_figs:
-        funs.get_displacement_pic(statistics_df, axis_name, target_config['date'])
-
-    # 특징별 분포 히스토그램 플롯
-    if save_feature_figs:
-        date_str = "_".join([str(date) for date in target_config["date"]])
-        funs.get_stat_hist_pic(statistics_df, 
-                          main_title=f'{date_name} feature distribution, {axis_name} axis, Front view',
-                          draw_targets=list(statistics_df.columns),
-                          save_path=f'{yaml_config.feature_figs_dir}/{axis_name}_axis/{date_str}_feature_distribution_peak_rms.png')
-    
-    ##############################
-    # 4. train                   
+    # 3. train                   
     ##############################
     # 데이터, 라벨 얻기
-    X, Y = funs.get_data_label(statistics_df, target_config['input_feature'])
+    X_train, y_train = funs.get_data_label(train_df, target_config['input_feature'])
+    X_val, y_val = funs.get_data_label(val_df, target_config['input_feature'])
+    X_test, y_test = funs.get_data_label(test_df, target_config['input_feature'])
     print(f'input feature: {target_config["input_feature"]}')
 
     model = funs.ANN()
     trainer = funs.Trainer(yaml_config)
     
-    accuracies, losses, all_y_true, all_y_pred = trainer.kfold_training(X, Y, model)
-    mean_accuracy, accuracy_confidence_interval, mean_loss, loss_confidence_interval = funs.calculate_result(accuracies, losses)
+    val_accuracy, val_loss, test_accuracy, test_loss, test_true_list, test_pred_list, val_true_list, val_pred_list = trainer.get_best_model(model, X_train, y_train, X_val, y_val, X_test, y_test)
 
-    # 전체 테스트 결과를 기반으로 성능 보고서 출력
-    all_y_true = np.concatenate(all_y_true, axis=0)
-    all_y_pred = np.concatenate(all_y_pred, axis=0)
+    print(f"""
+Validation Accuracy: {val_accuracy:.4f}, Validation Loss: {val_loss:.4f}
+Test Accuracy: {test_accuracy:.4f}, Test Loss: {test_loss:.4f}
+    """)
 
-    report = classification_report(all_y_true, all_y_pred, target_names=['B', 'H', 'IR', 'OR'], digits=4)
-    print('클래스별 성능 보고서')
-    print(report)
+    val_true_list = np.concatenate(val_true_list, axis=0)
+    val_pred_list = np.concatenate(val_pred_list, axis=0)
+    test_true_list = np.concatenate(test_true_list, axis=0)
+    test_pred_list = np.concatenate(test_pred_list, axis=0)
+
+    val_report = classification_report(val_true_list, val_pred_list, target_names=['B', 'H', 'IR', 'OR'], digits=4)
+    print('Validation 클래스별 성능 보고서')
+    print(val_report)
 
     class_accuracies = {}
-    for class_label in np.unique(all_y_true):
-        correct_class_predictions = np.sum((all_y_true == class_label) & (all_y_pred == class_label))
-        total_class_samples = np.sum(all_y_true == class_label)
+    for class_label in np.unique(val_true_list):
+        correct_class_predictions = np.sum((val_true_list == class_label) & (val_pred_list == class_label))
+        total_class_samples = np.sum(val_true_list == class_label)
+        class_accuracies[class_label] = correct_class_predictions / total_class_samples if total_class_samples > 0 else 0
+
+    print("클래스별 정확도:")
+    for class_label, accuracy in class_accuracies.items():
+        print(f"클래스 {yaml_config.class2label_dic[class_label]}: {accuracy:.4f}")
+
+    test_report = classification_report(test_true_list, test_pred_list, target_names=['B', 'H', 'IR', 'OR'], digits=4)
+    print('Test 클래스별 성능 보고서')
+    print(test_report)
+
+    class_accuracies = {}
+    for class_label in np.unique(test_true_list):
+        correct_class_predictions = np.sum((test_true_list == class_label) & (test_pred_list == class_label))
+        total_class_samples = np.sum(test_true_list == class_label)
         class_accuracies[class_label] = correct_class_predictions / total_class_samples if total_class_samples > 0 else 0
 
     print("클래스별 정확도:")
@@ -103,21 +102,21 @@ def main(
     ##############################
     # 5. save                    
     ##############################
-    if save_log:
-        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        funs.log_results(
-            file_path = yaml_config['log_txt'],
-            timestamp=current_time,
-            date = target_config['date'],
-            input_feature=target_config['input_feature'],
-            mean_accuracy=mean_accuracy,
-            accuracy_confidence_interval=accuracy_confidence_interval,
-            mean_loss=mean_loss,
-            loss_confidence_interval=loss_confidence_interval,
-            class2label_dic = yaml_config.class2label_dic,
-            class_accuracies = class_accuracies,
-            report=report,
-        )
+    # if save_log:
+        # current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # funs.log_results(
+        #     model_name="ANN",
+        #     file_path = yaml_config['log_txt'],
+        #     timestamp=current_time,
+        #     date = target_config['date'],
+        #     input_feature=target_config['input_feature'],
+        #     mean_accuracy=accuracies,
+        #     mean_loss=losses,
+        #     class2label_dic = yaml_config.class2label_dic,
+        #     class_accuracies = class_accuracies,
+        #     report=report,
+        # )
+
 
     # 모델 저장
     if save_model:
@@ -137,16 +136,18 @@ def main(
 
 
 if __name__ == "__main__":
+    args = funs.parse_arguments()
+
     target_config = {
-        'date': ['1105', '1217'],           # 필수
-        # 'date': ['1011', '1012', '1024', '1102', '1105', '1217'],         # 필수
-        # 'bearing_type': '6204',   # optional
-        # 'RPM': '1200',            # optional
-        'view': 'F',                # optional
-        'axis': ['z'],              # 필수. ['z'] or ['x'] or ['z', 'x'] 
-        'input_feature': 'z_fused_features'    # 필수. 모델 input feature로 사용할 데이터
+        'date': args.dates,
+        'view': args.view,
+        'axis': args.axis,
+        'input_feature': args.input_feature
     }
 
     yaml_config = funs.load_yaml('./model_config.yaml')
 
-    main(yaml_config, target_config, save_feature_figs=True, save_model=True, save_log=False)
+    main(
+        yaml_config, target_config, 
+        save_model=args.save_model, save_log=args.save_log
+        )

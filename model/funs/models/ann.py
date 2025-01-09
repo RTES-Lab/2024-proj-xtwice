@@ -8,12 +8,11 @@ class ANN:
     def get_model(self, X_train):
         # 새 모델 생성
         self.model = Sequential([
-            # Dense(256, activation='relu', input_shape=(X_train.shape[1],)),
-            # Dense(128, activation='relu',),
-            # Dense(64, activation='relu'),
-            # Dense(32, activation='relu'),
-            Dense(16, activation='relu', input_shape=(X_train.shape[1],)),
-            Dense(8, activation='relu'),
+            Dense(256, activation='relu', input_shape=(X_train.shape[1],)),
+            Dense(128, activation='relu',),
+            Dense(64, activation='relu'),
+            Dense(32, activation='relu'),
+            Dense(16, activation='relu'),
             Dense(4, activation='softmax')
         ])
 
