@@ -2,7 +2,7 @@ seed: 42
 
 output_dir: '../MDPS-vis-master/output'
 model_dir: './saved'
-log_txt: './log/experiment_results.txt'
+log_txt: './log/experiment_results.csv'
 feature_figs_dir: './feature_distribution_figs'
 
 axis_to_csv_dic:
@@ -43,5 +43,5 @@ overlap: 1024
 
 # 훈련 관련 파라미터
 epochs: 50
-batch_size: 128
+batch_size: 64
 lr: 0.001

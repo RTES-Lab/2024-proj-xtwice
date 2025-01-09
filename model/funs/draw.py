@@ -26,6 +26,8 @@ def get_stat_hist_pic(df: pd.DataFrame, main_title: str, draw_targets: List[str]
     for i, (group_name, targets) in enumerate(groups.items()):
         plt.subplot(fig_len, 1, i + 1)
         for fault_type in fault_type_list:
+            # if fault_type == 'B':
+            #     continue
             for target in targets:
                 subset = df[df['fault_type'] == fault_type]
                 plt.hist(subset[target], bins=50, alpha=0.5, label=f"{fault_type} ({target})")

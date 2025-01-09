@@ -13,6 +13,7 @@ import torch
 import numpy as np
 import pandas as pd
 import scipy.stats as stats
+import argparse
 
 
 def load_yaml(config_path: str) -> Box:
@@ -107,27 +108,39 @@ def get_dir_list(
 
 
 def log_results(
-        file_path, timestamp, date, input_feature, mean_accuracy, accuracy_confidence_interval, 
-        mean_loss, loss_confidence_interval, class2label_dic, class_accuracies, report
-                ):
+        model_name, file_path, timestamp, date, input_feature, mean_accuracy, 
+        mean_loss, class2label_dic, class_accuracies, report
+        ):
     """
-    결과를 텍스트파일에 로깅하는 함수
+    결과를 CSV 파일에 로깅하는 함수
     """
-    with open(file_path, 'a', encoding='utf-8') as file:  # 'a' 모드로 열어 기존 파일에 이어 쓰기
-        file.write("====================================================\n")
-        file.write(f"Timestamp: {timestamp}\n")
-        file.write(f"사용 데이터: {date}\n")
-        file.write("모델 결과\n")
-        file.write(f"사용 특징: {input_feature}\n")
-        file.write(f"정확도: {mean_accuracy:.4f} ± {accuracy_confidence_interval[1] - mean_accuracy:.4f}\n")
-        file.write(f"손실: {mean_loss:.4f} ± {loss_confidence_interval[1] - mean_loss:.4f}\n")
-        if class_accuracies is not None:
-            file.write("\n클래스별 정확도:\n")
-            for class_label, accuracy in class_accuracies.items():
-                file.write(f"클래스 {class2label_dic[class_label]}: {accuracy:.4f}\n")
-        file.write("\n클래스별 성능 보고서:\n")
-        file.write(report)
-        file.write("\n")
+    # 결과 데이터를 딕셔너리로 정리
+    results = {
+        "모델": [model_name],
+        "Timestamp": [timestamp],
+        "사용 데이터": [date],
+        "사용 특징": [input_feature],
+        "정확도": [f"{mean_accuracy:.4f}"],
+        "손실": [f"{mean_loss:.4f}"]
+    }
+    
+    # 클래스별 정확도를 추가 (없을 경우 빈 값으로 처리)
+    if class_accuracies is not None:
+        for class_label, accuracy in class_accuracies.items():
+            class_name = class2label_dic.get(class_label, f"Class_{class_label}")
+            results[f"클래스 {class_name} 정확도"] = [f"{accuracy:.4f}"]
+    
+    # 성능 보고서를 추가
+    results["클래스별 성능 보고서"] = [report]
+
+    # DataFrame으로 변환
+    df = pd.DataFrame(results)
+    
+    # CSV로 저장 (기존 파일에 추가, 없으면 새로 생성)
+    mode = 'a' if pd.io.common.file_exists(file_path) else 'w'
+    header = not pd.io.common.file_exists(file_path)  # 파일이 없으면 header를 포함
+    df.to_csv(file_path, mode=mode, header=header, index=False, encoding='utf-8-sig')
+        
     print(f"결과가 {file_path}에 저장되었습니다.")
 
 
@@ -144,18 +157,6 @@ def calculate_result(accuracy, loss):
         accuracy_confidence_interval = [0.0, 0.0]
         loss_confidence_interval = [0.0, 0.0]
 
-        # 신뢰구간 계산
-        if accuracy_variance > 0:
-            accuracy_confidence_interval = stats.t.interval(0.95, len(accuracy)-1, loc=mean_accuracy, scale=stats.sem(accuracy))
-            print(f"정확도: {mean_accuracy:.4f} ± {accuracy_confidence_interval[1] - mean_accuracy:.4f}")
-        else:
-            print(f"정확도: {mean_accuracy:.4f} (변동이 없어 신뢰구간을 계산할 수 없습니다.)")
-
-        if loss_variance > 0:
-            loss_confidence_interval = stats.t.interval(0.95, len(loss)-1, loc=mean_loss, scale=stats.sem(loss))
-            print(f"손실: {mean_loss:.4f} ± {loss_confidence_interval[1] - mean_loss:.4f}")
-        else:
-            print(f"손실: {mean_loss:.4f} (변동이 없어 신뢰구간을 계산할 수 없습니다.)")
 
     return mean_accuracy, accuracy_confidence_interval, mean_loss, loss_confidence_interval
 
@@ -229,3 +230,16 @@ def compare_torch_n_ptl(df: pd.DataFrame, ptl_model: str, torch_model: torch.nn.
     predictions2 = predict_with_torch(torch_model, data)
     print("Predictions with ptl:", predictions)
     print("Predictions with torch:", predictions2)
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="Train and evaluate WDCNN model.")
+    parser.add_argument('--dates', nargs='+', required=True, help="Target dates (e.g., 1105 1217)")
+    parser.add_argument('--view', type=str, default='F', help="View type (e.g., F)")
+    parser.add_argument('--axis', nargs='+', default=['z'], help="Target axis (e.g., z or z x)")
+    parser.add_argument('--input_feature', required=True, type=str, help="Input feature (e.g., z)")
+    parser.add_argument('--save_figs', action='store_true', help="Save figures.")
+    parser.add_argument('--save_model', action='store_true', help="Save trained model.")
+    parser.add_argument('--save_log', action='store_true', help="Save log results.")
+    parser.add_argument('--compare', action='store_true', help="Enable comparison mode.")
+    return parser.parse_args()
