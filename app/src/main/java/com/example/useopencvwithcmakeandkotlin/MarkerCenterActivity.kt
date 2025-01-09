@@ -41,8 +41,8 @@ class MarkerCenterActivity : AppCompatActivity() {
     private var drawingBitmap: Bitmap? = null
     private var canvas: Canvas? = null
     
-    // 마커 좌표 저장
-    private val markerCoordinates = mutableListOf<MarkerPoint>()
+    // 마커 좌표 저장 (리스트 대신 단일 포인트로 변경)
+    private var currentMarker: MarkerPoint? = null
     private var roiSize: Int = 5
     private var croppedBitmap: Bitmap? = null  // ROI로 잘린 비트맵 저장용
 
@@ -134,7 +134,7 @@ class MarkerCenterActivity : AppCompatActivity() {
                 MotionEvent.ACTION_DOWN -> {
                     // 터치 좌표를 이미지 좌표로 변환
                     val point = convertTouchPointToImagePoint(event.x, event.y)
-                    markerCoordinates.add(MarkerPoint(point.x.toInt(), point.y.toInt()))
+                    currentMarker = MarkerPoint(point.x.toInt(), point.y.toInt())
                     redrawMarkers()
                     true
                 }
@@ -183,7 +183,7 @@ class MarkerCenterActivity : AppCompatActivity() {
         drawingBitmap = croppedBitmap!!.copy(Bitmap.Config.ARGB_8888, true)
         canvas = Canvas(drawingBitmap!!)
 
-        markerCoordinates.forEach { point ->
+        currentMarker?.let { point ->
             // 마커 점 그리기
             paint.style = Paint.Style.FILL
             paint.color = Color.GREEN
@@ -210,8 +210,8 @@ class MarkerCenterActivity : AppCompatActivity() {
 
     private fun setupConfirmButton() {
         confirmButton.setOnClickListener {
-            if (markerCoordinates.isEmpty()) {
-                Toast.makeText(this, "마커를 하나 이상 선택해주세요", Toast.LENGTH_SHORT).show()
+            if (currentMarker == null) {
+                Toast.makeText(this, "마커를 선택해주세요", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -220,7 +220,7 @@ class MarkerCenterActivity : AppCompatActivity() {
                 putExtra("videoUri", getIntent().getStringExtra("videoUri"))
                 putExtra("roiData", getIntent().getParcelableExtra<ROIData>("roiData"))
                 putExtra("hsvRange", getIntent().getParcelableExtra<HSVRange>("hsvRange"))
-                putExtra("markerPoints", ArrayList(markerCoordinates))
+                putExtra("markerPoints", ArrayList<MarkerPoint>().apply { currentMarker?.let { add(it) } })
                 putExtra("fps", getIntent().getFloatExtra("fps", 30f))
             }
             
@@ -234,10 +234,10 @@ class MarkerCenterActivity : AppCompatActivity() {
 
     private fun setupUndoButton() {
         undoButton.setOnClickListener {
-            if (markerCoordinates.isNotEmpty()) {
-                markerCoordinates.removeAt(markerCoordinates.lastIndex)
+            if (currentMarker != null) {
+                currentMarker = null
                 redrawMarkers()
-                Toast.makeText(this, "마지막 마커가 제거되었습니다", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "마커가 제거되었습니다", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(this, "제거할 마커가 없습니다", Toast.LENGTH_SHORT).show()
             }
