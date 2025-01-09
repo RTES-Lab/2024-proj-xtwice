@@ -48,10 +48,11 @@ class DisplacementActivity : AppCompatActivity() {
     private var fps: Float = 30f
     private lateinit var progressBar: ProgressBar
     private lateinit var statusTextView: TextView
-    private lateinit var firstFrameImageView: ImageView
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        supportActionBar?.hide()
         setContentView(R.layout.activity_displacement)
 //
 //        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -85,7 +86,7 @@ class DisplacementActivity : AppCompatActivity() {
 
         progressBar = findViewById(R.id.progressBar)
         statusTextView = findViewById(R.id.statusTextView)
-        firstFrameImageView = findViewById(R.id.firstFrameImageView)
+
 
         // 데이터 받기 - null 체크 추가
         videoUri = intent.getStringExtra("videoUri") ?: ""
@@ -235,10 +236,7 @@ class DisplacementActivity : AppCompatActivity() {
             )
             Utils.matToBitmap(displayFrame, resultBitmap)
             
-            runOnUiThread {
-                firstFrameImageView.setImageBitmap(resultBitmap)
-            }
-            
+
             // 메모리 해제
             displayFrame.release()
         }
@@ -363,7 +361,7 @@ class DisplacementActivity : AppCompatActivity() {
             val progress = (currentFrame.toFloat() / totalFrames * 100).toInt()
             runOnUiThread {
                 progressBar.progress = currentFrame
-                statusTextView.text = "변위 측정 중... ($progress%)"
+                statusTextView.text = "변위 측정 중... "
             }
         }
 
@@ -389,11 +387,13 @@ class DisplacementActivity : AppCompatActivity() {
         if (displacements.isNotEmpty()) {
             saveDisplacementsToCSV(adjustedDisplacements)
             runOnUiThread {
+                progressBar.visibility = View.GONE  // 프로그레스바 숨기기
                 statusTextView.text = "저장 완료! (${displacements.size}개 데이터)"
             }
         } else {
             Log.e("DisplacementActivity", "저장할 변위 데이터가 없습니다")
             runOnUiThread {
+                progressBar.visibility = View.GONE  // 프로그레스바 숨기기
                 statusTextView.text = "오류: 변위 데이터 없음"
                 Toast.makeText(this, "변위 데이터를 측정하지 못했습니다", Toast.LENGTH_LONG).show()
             }

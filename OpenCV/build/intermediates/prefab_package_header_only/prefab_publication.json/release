@@ -1,5 +1,5 @@
 {
-  "installationFolder": "/home/kseorang/Github/app-int/X-twice/OpenCV/build/intermediates/prefab_package/release/prefab",
+  "installationFolder": "C:\\Users\\leetaehun\\AndroidStudioProjects\\UseOpenCVwithCMakeandKotlin\\OpenCV\\build\\intermediates\\prefab_package\\release\\prefab",
   "gradlePath": ":OpenCV",
   "packageInfo": {
     "packageName": "OpenCV",
@@ -8,7 +8,7 @@
     "modules": [
       {
         "moduleName": "opencv_jni_shared",
-        "moduleHeaders": "/home/kseorang/Github/app-int/X-twice/OpenCV/native/jni/include",
+        "moduleHeaders": "C:\\Users\\leetaehun\\AndroidStudioProjects\\UseOpenCVwithCMakeandKotlin\\OpenCV\\native\\jni\\include",
         "moduleExportLibraries": [],
         "abis": []
       }

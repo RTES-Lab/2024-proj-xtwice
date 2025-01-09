@@ -17,6 +17,7 @@ class VideoSizeActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        supportActionBar?.hide()
         setContentView(R.layout.activity_video_size)
 
         widthEditText = findViewById(R.id.widthEditText)
@@ -25,6 +26,36 @@ class VideoSizeActivity : AppCompatActivity() {
         confirmButton = findViewById(R.id.confirmButton)
 
         val videoUri = intent.getStringExtra("videoUri")
+
+        // 해상도 버튼 설정
+        findViewById<Button>(R.id.resolution1080p).setOnClickListener {
+            widthEditText.setText("1080")
+            heightEditText.setText("1920")
+        }
+
+        findViewById<Button>(R.id.resolution1080pLand).setOnClickListener {
+            widthEditText.setText("1920")
+            heightEditText.setText("1080")
+        }
+
+        findViewById<Button>(R.id.resolution720p).setOnClickListener {
+            widthEditText.setText("720")
+            heightEditText.setText("1280")
+        }
+
+        findViewById<Button>(R.id.resolution720pLand).setOnClickListener {
+            widthEditText.setText("1280")
+            heightEditText.setText("720")
+        }
+
+        // FPS 버튼 설정
+        findViewById<Button>(R.id.fps120).setOnClickListener {
+            fpsEditText.setText("120")
+        }
+
+        findViewById<Button>(R.id.fps240).setOnClickListener {
+            fpsEditText.setText("240")
+        }
 
         confirmButton.setOnClickListener {
             val width = widthEditText.text.toString().toIntOrNull()

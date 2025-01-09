@@ -24,6 +24,7 @@ class FaultDiagnosisActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        supportActionBar?.hide()
         setContentView(R.layout.activity_result)
 
         // TextView에 추론 결과를 표시

@@ -60,6 +60,7 @@ class HSVActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        supportActionBar?.hide()
         setContentView(R.layout.activity_hsv)
 
         // 먼저 뷰들을 초기화

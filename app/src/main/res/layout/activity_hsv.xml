@@ -1,93 +1,191 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#FFFFFF">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/stepCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="32dp"
+        app:cardCornerRadius="15dp"
+        app:cardElevation="4dp"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="STEP 5"
+                android:textColor="#FF6B8E"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.1"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="HSV 설정"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="마커의 색상, 채도, 명도 범위를 설정해주세요"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"/>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
 
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_above="@id/controlsLayout"
-        android:layout_alignParentTop="true"
-        android:scaleType="fitCenter"/>
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="16dp"
+        android:scaleType="fitCenter"
+        app:layout_constraintTop_toBottomOf="@id/stepCard"
+        app:layout_constraintBottom_toTopOf="@id/controlsCard"/>
 
-    <LinearLayout
-        android:id="@+id/controlsLayout"
+    <androidx.cardview.widget.CardView
+        android:id="@+id/controlsCard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@id/confirmButton"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:layout_marginHorizontal="20dp"
+        app:cardCornerRadius="15dp"
+        app:cardElevation="4dp"
+        app:cardBackgroundColor="#F5F5F5"
+        android:layout_marginVertical="8dp"
+        app:layout_constraintBottom_toTopOf="@id/confirmButton">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="H (색상) 최소/최대: 0-179"/>
-            
-        <SeekBar
-            android:id="@+id/hSeekBarMin"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:max="179"/>
-        <SeekBar
-            android:id="@+id/hSeekBarMax"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="179"/>
+            android:orientation="vertical"
+            android:padding="20dp">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="S (채도) 최소/최대: 0-255"/>
-            
-        <SeekBar
-            android:id="@+id/sMinSeekBar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="255"/>
-        <SeekBar
-            android:id="@+id/sMaxSeekBar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="255"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="H (색상) 최소/최대: 0-179"
+                android:textColor="#2C3E50"
+                android:textSize="16sp"
+                android:textStyle="bold"/>
+                
+            <SeekBar
+                android:id="@+id/hSeekBarMin"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:max="179"
+                android:minHeight="6dp"
+                android:progressBackgroundTint="#000000"
+                />
+            <SeekBar
+                android:id="@+id/hSeekBarMax"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:max="179"
+                android:minHeight="6dp"
+                android:progressBackgroundTint="#000000" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="V (명도) 최소/최대: 0-255"/>
-            
-        <SeekBar
-            android:id="@+id/vMinSeekBar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="255"/>
-        <SeekBar
-            android:id="@+id/vMaxSeekBar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="255"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="S (채도) 최소/최대: 0-255"
+                android:textColor="#2C3E50"
+                android:textSize="16sp"
+                android:textStyle="bold"/>
+                
+            <SeekBar
+                android:id="@+id/sMinSeekBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:max="255"
+                android:minHeight="6dp"
 
-    </LinearLayout>
+                android:progressBackgroundTint="#000000" />
+            <SeekBar
+                android:id="@+id/sMaxSeekBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:max="255"
+                android:minHeight="6dp"
+                android:progressBackgroundTint="#000000"
+                />
 
-    <Button
-        android:id="@+id/confirmButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_margin="16dp"
-        android:text="선택하기"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="V (명도) 최소/최대: 0-255"
+                android:textColor="#2C3E50"
+                android:textSize="16sp"
+                android:textStyle="bold"/>
+                
+            <SeekBar
+                android:id="@+id/vMinSeekBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:max="255"
+                android:minHeight="6dp"
+                android:progressBackgroundTint="#000000"
+               />
+            <SeekBar
+                android:id="@+id/vMaxSeekBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:max="255"
+                android:minHeight="6dp"
+                android:progressBackgroundTint="#000000"
+                />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
 
     <TextView
         android:id="@+id/hsvInfoTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_above="@id/confirmButton"
-        android:layout_centerHorizontal="true"
-        android:layout_margin="8dp"
+        android:layout_marginBottom="8dp"
         android:background="#80000000"
         android:padding="8dp"
-        android:textColor="#FFFFFF"/>
+        android:textColor="#FFFFFF"
+        app:layout_constraintBottom_toTopOf="@id/confirmButton"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"/>
 
-</RelativeLayout> 
+    <Button
+        android:id="@+id/confirmButton"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginBottom="16dp"
+        android:text="선택하기"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:backgroundTint="#FF6B8E"
+        android:elevation="4dp"
+        android:fontFamily="@font/robotolight"
+        app:cornerRadius="28dp"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout> 

@@ -46,6 +46,7 @@ class MarkerColorActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        supportActionBar?.hide()
         binding = ActivityMarkerColorBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
