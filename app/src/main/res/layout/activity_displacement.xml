@@ -88,25 +88,9 @@
         app:layout_constraintBottom_toBottomOf="parent">
 
         <Button
-            android:id="@+id/shareButton"
-            android:layout_width="0dp"
-            android:layout_height="56dp"
-            android:layout_weight="1"
-            android:layout_marginEnd="8dp"
-            android:text="CSV 파일 공유"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:backgroundTint="#FFB6C1"
-            android:elevation="4dp"
-            android:fontFamily="@font/robotolight"
-            android:visibility="gone"
-            app:cornerRadius="28dp"/>
-
-        <Button
             android:id="@+id/inferenceButton"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:layout_weight="1"
             android:text="결함 확인하기"
             android:textSize="16sp"
             android:textStyle="bold"

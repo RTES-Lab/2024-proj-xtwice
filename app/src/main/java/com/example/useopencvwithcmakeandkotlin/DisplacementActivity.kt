@@ -441,7 +441,7 @@ class DisplacementActivity : AppCompatActivity() {
             }
 
             runOnUiThread {
-                showShareButton(csvFile)
+
                 Toast.makeText(this, "CSV 파일이 저장되었습니다: ${csvFile.absolutePath}", Toast.LENGTH_LONG).show()
                 showInferenceButton(csvFile)
             }
@@ -453,24 +453,7 @@ class DisplacementActivity : AppCompatActivity() {
         }
     }
 
-    private fun showShareButton(file: File) {
-        val shareButton = findViewById<Button>(R.id.shareButton)
-        shareButton.visibility = View.VISIBLE
-        shareButton.setOnClickListener {
-            val uri = FileProvider.getUriForFile(
-                this,
-                "${packageName}.provider",
-                file
-            )
-            val shareIntent = Intent().apply {
-                action = Intent.ACTION_SEND
-                type = "text/csv"
-                putExtra(Intent.EXTRA_STREAM, uri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            startActivity(Intent.createChooser(shareIntent, "CSV 파일 공유"))
-        }
-    }
+
 
     private fun getRealPathFromURI(uri: Uri): String? {
         try {
