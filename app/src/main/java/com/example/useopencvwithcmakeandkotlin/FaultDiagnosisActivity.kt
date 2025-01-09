@@ -54,6 +54,8 @@ class FaultDiagnosisActivity : AppCompatActivity() {
             val predictedClass =
                 if (maxLogitIndex != -1) classes[maxLogitIndex] else "Unknown"
 
+            Log.d("FaultDiagnosisActivity", "Predicted Class: $predictedClass")
+
             resultTextView.text = """
         결함 진단 결과
         

@@ -1,5 +1,5 @@
 {
-  "installationFolder": "C:\\Users\\leetaehun\\AndroidStudioProjects\\UseOpenCVwithCMakeandKotlin\\OpenCV\\build\\intermediates\\prefab_package\\debug\\prefab",
+  "installationFolder": "/home/kseorang/Github/app-int/X-twice/OpenCV/build/intermediates/prefab_package/debug/prefab",
   "gradlePath": ":OpenCV",
   "packageInfo": {
     "packageName": "OpenCV",
@@ -8,16 +8,16 @@
     "modules": [
       {
         "moduleName": "opencv_jni_shared",
-        "moduleHeaders": "C:\\Users\\leetaehun\\AndroidStudioProjects\\UseOpenCVwithCMakeandKotlin\\OpenCV\\native\\jni\\include",
+        "moduleHeaders": "/home/kseorang/Github/app-int/X-twice/OpenCV/native/jni/include",
         "moduleExportLibraries": [],
         "abis": [
           {
-            "abiName": "arm64-v8a",
+            "abiName": "x86_64",
             "abiApi": 21,
             "abiNdkMajor": 25,
             "abiStl": "c++_shared",
-            "abiLibrary": "C:\\Users\\leetaehun\\AndroidStudioProjects\\UseOpenCVwithCMakeandKotlin\\OpenCV\\.cxx\\Debug\\2x6j294r\\arm64-v8a\\libopencv_jni_shared.a",
-            "abiAndroidGradleBuildJsonFile": "C:\\Users\\leetaehun\\AndroidStudioProjects\\UseOpenCVwithCMakeandKotlin\\OpenCV\\.cxx\\Debug\\2x6j294r\\arm64-v8a\\android_gradle_build.json"
+            "abiLibrary": "/home/kseorang/Github/app-int/X-twice/OpenCV/.cxx/Debug/2x6j294r/x86_64/libopencv_jni_shared.a",
+            "abiAndroidGradleBuildJsonFile": "/home/kseorang/Github/app-int/X-twice/OpenCV/.cxx/Debug/2x6j294r/x86_64/android_gradle_build.json"
           }
         ]
       }
