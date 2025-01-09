@@ -82,8 +82,7 @@ class TestActivity: AppCompatActivity() {
             }
 
             // Softmax 계산
-            val maxLogit = sampleLogits.maxOrNull() ?: 0f
-            val expValues = sampleLogits.map { exp((it - maxLogit).toDouble()).toFloat() }
+            val expValues = sampleLogits.map { exp((it).toDouble()).toFloat() }
             val sumExp = expValues.sum()
 
             // 해당 클래스의 probability
