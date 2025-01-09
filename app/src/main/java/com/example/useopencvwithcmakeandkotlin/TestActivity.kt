@@ -19,6 +19,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.exp
+import kotlin.math.ln
 
 class TestActivity: AppCompatActivity() {
     private lateinit var resultTextView: TextView
@@ -30,29 +32,75 @@ class TestActivity: AppCompatActivity() {
         resultTextView = findViewById(R.id.resultTextView)
 
         // prediction_list를 담을 곳
-        val predictionList = mutableListOf<FloatArray>()
+        val predictionList = mutableListOf<IntArray>()
+        var val_loss = 0.0f
 
         // CSV 파일을 비동기적으로 읽고 모델을 실행
         GlobalScope.launch(Dispatchers.IO) {
             val data = readCsvAndParseListFromAssets("data.csv")
+            var correct = 0
 
             // 각 행의 z 데이터를 runModel에 전달하고 prediction_list에 저장
-            data.forEach { (_, _, zList) ->
+            data.forEachIndexed { index, (_, label, zList) ->
                 val prediction = runModel(zList)
-                predictionList.add(prediction)
+                val loss = crossEntropyLoss(arrayOf(prediction), intArrayOf(label.toInt()))
+                val_loss += loss
+
+                val predictedLabel = prediction.indices.maxByOrNull { prediction[it] } ?: -1
+                predictionList.add(intArrayOf(predictedLabel))
+
+                // label과 prediction 비교
+                val actualLabel = label.toIntOrNull()
+                if (actualLabel == predictedLabel) {
+                    correct++
+                }
+
+                Log.d("TestActivity", "Row $index - Actual: $actualLabel, Predicted: $predictedLabel")
+                Log.d("TestActivity", "Loss: $loss")
             }
 
+            val_loss /= (data.size)
             // 결과를 메인 스레드에서 처리
             withContext(Dispatchers.Main) {
+                Log.d("TestActivity", "data sizw: ${data.size}")
                 Log.d("TestActivity", "Total predictions: ${predictionList.size}")
-                resultTextView.text = "Prediction complete: ${predictionList[0].joinToString(", ") { it.toString() }} results"
+                Log.d("TestActivity", "Predictions: ${predictionList.joinToString { it.joinToString(", ", "[", "]") }}")
+                Log.d("TestActivity", "Loss: $val_loss")
+                resultTextView.text = """
+                    |Correct predictions: $correct
+                    |Loss: $val_loss""".trimMargin()
             }
+
         }
     }
+
+    fun crossEntropyLoss(logits: Array<FloatArray>, labels: IntArray): Float {
+        return logits.mapIndexed { index, sampleLogits ->
+            val label = labels[index]
+            require(label in sampleLogits.indices) {
+                "레이블($label)이 유효한 범위(0-${sampleLogits.size - 1})를 벗어났습니다."
+            }
+
+            // Softmax 계산
+            val maxLogit = sampleLogits.maxOrNull() ?: 0f
+            val expValues = sampleLogits.map { exp((it - maxLogit).toDouble()).toFloat() }
+            val sumExp = expValues.sum()
+
+            // 해당 클래스의 probability
+            val probability = expValues[label] / sumExp
+
+            // Cross Entropy 계산 (-log(probability))
+            -ln(probability.toDouble()).toFloat()
+        }.average().toFloat()
+    }
+
+
+
 
     // CSV 파일을 읽고 데이터를 반환
     fun readCsvAndParseListFromAssets(csvFileName: String): List<Triple<String, String, List<Float>>> {
         val data = mutableListOf<Triple<String, String, List<Float>>>()
+        val labels = mutableListOf<IntArray>()
 
         try {
             val inputStream = assets.open(csvFileName)
@@ -74,6 +122,7 @@ class TestActivity: AppCompatActivity() {
                     val parsedList = parseStringToList(listString)
 
                     data.add(Triple(faultType, label, parsedList))
+                    labels.add(label.split(" ").map { it.toInt() }.toIntArray())
                 }
             }
 
