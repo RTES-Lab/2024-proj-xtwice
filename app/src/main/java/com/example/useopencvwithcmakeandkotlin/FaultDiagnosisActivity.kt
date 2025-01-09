@@ -56,6 +56,12 @@ class FaultDiagnosisActivity : AppCompatActivity() {
         if (displacements.size == 2048) {
             try {
                 val modelOutput = runModel(displacements)
+
+                val expValues = modelOutput.map { Math.exp(it.toDouble()) } // Float -> Double 변환
+                val sumExpValues = expValues.sum()
+                val probabilities = expValues.map { (it / sumExpValues).toFloat() } // 결과를 다시 Float로 변환
+                Log.d("FaultDiagnosisActivity", "모델 출력: ${probabilities.joinToString(", ") { "%.2f".format(it) }}")
+
                 val maxLogitIndex = modelOutput.indices.maxByOrNull { modelOutput[it] } ?: -1
                 val classes = arrayOf("B", "H", "IR", "OR")
                 val predictedClass = if (maxLogitIndex != -1) classes[maxLogitIndex] else "Unknown"
