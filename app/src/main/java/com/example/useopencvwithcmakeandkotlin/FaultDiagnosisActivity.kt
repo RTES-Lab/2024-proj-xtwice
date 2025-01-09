@@ -4,7 +4,9 @@ import android.content.Context
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Button
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -21,6 +23,9 @@ import java.io.InputStreamReader
 class FaultDiagnosisActivity : AppCompatActivity() {
 
     private lateinit var resultTextView: TextView
+    private lateinit var progressBar: ProgressBar
+    private lateinit var statusTextView: TextView
+    private lateinit var finishButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,6 +34,9 @@ class FaultDiagnosisActivity : AppCompatActivity() {
 
         // TextView에 추론 결과를 표시
         resultTextView = findViewById(R.id.resultTextView)
+        progressBar = findViewById(R.id.progressBar)
+        statusTextView = findViewById(R.id.statusTextView)
+        finishButton = findViewById(R.id.finishButton)
 
         val csvUriString = intent.getStringExtra("csvFileUri")
         if (csvUriString == null) {
@@ -44,28 +52,49 @@ class FaultDiagnosisActivity : AppCompatActivity() {
         val csvFileName = File(csvUri.path ?: "").name
         Log.d("FaultDiagnosisActivity", "CSV 파일 이름: $csvFileName")
 
-
         if (displacements.size == 2048) {
-            val modelOutput = runModel(displacements)
+            try {
+                val modelOutput = runModel(displacements)
+                val maxLogitIndex = modelOutput.indices.maxByOrNull { modelOutput[it] } ?: -1
+                val classes = arrayOf("B", "H", "IR", "OR")
+                val predictedClass = if (maxLogitIndex != -1) classes[maxLogitIndex] else "Unknown"
 
-            // 로짓 값에서 가장 큰 값을 가진 인덱스 찾기
-            val maxLogitIndex = modelOutput.indices.maxByOrNull { modelOutput[it] } ?: -1
-            val classes = arrayOf("B", "H", "IR", "OR")
-            val predictedClass =
-                if (maxLogitIndex != -1) classes[maxLogitIndex] else "Unknown"
-
-            Log.d("FaultDiagnosisActivity", "Predicted Class: $predictedClass")
-
-            resultTextView.text = """
-        결함 진단 결과
-        
-        예상 결함: $predictedClass
-    """.trimIndent()
+                // 결과 표시 및 UI 업데이트
+                runOnUiThread {
+                    progressBar.visibility = View.GONE
+                    statusTextView.visibility = View.GONE
+                    
+                    // 결과 텍스트 표시
+                    resultTextView.apply {
+                        visibility = View.VISIBLE
+                        text = """
+                            결함 진단 결과
+                            
+                            예상 결함: $predictedClass
+                        """.trimIndent()
+                    }
+                    
+                    // 완료 버튼 표시
+                    finishButton.apply {
+                        visibility = View.VISIBLE
+                        setOnClickListener {
+                            finish()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("FaultDiagnosisActivity", "모델 실행 중 오류: ${e.message}")
+                runOnUiThread {
+                    progressBar.visibility = View.GONE
+                    statusTextView.text = "오류: 분석 실패"
+                }
+            }
         } else {
-            Toast.makeText(this, "CSV 파일 데이터가 부족합니다", Toast.LENGTH_LONG).show()
+            runOnUiThread {
+                progressBar.visibility = View.GONE
+                statusTextView.text = "오류: 데이터 부족"
+            }
         }
-
-
     }
 
     private fun readCSVData(uri: Uri): List<Float> {
