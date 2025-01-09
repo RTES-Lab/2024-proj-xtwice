@@ -1,6 +1,7 @@
 package com.example.useopencvwithcmakeandkotlin
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -78,7 +79,10 @@ class FaultDiagnosisActivity : AppCompatActivity() {
                     finishButton.apply {
                         visibility = View.VISIBLE
                         setOnClickListener {
-                            finish()
+                            // StartActivity로 이동하면서 현재까지의 액티비티 스택을 모두 제거
+                            val intent = Intent(this@FaultDiagnosisActivity, StartActivity::class.java)
+                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            startActivity(intent)
                         }
                     }
                 }
