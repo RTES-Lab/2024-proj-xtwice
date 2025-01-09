@@ -1,16 +1,22 @@
 # main.py
 
 import os
-import datetime
-
-import tensorflow as tf
-from sklearn.metrics import classification_report
 
 import funs
 
 import numpy as np
 import pandas as pd
 
+import argparse
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="Draw.")
+    parser.add_argument('--dates', nargs='+', required=True, help="Target dates (e.g., 1105 1217)")
+    parser.add_argument('--view', type=str, default='F', help="View type (e.g., F)")
+    parser.add_argument('--axis', nargs='+', default=['z'], help="Target axis (e.g., z or z x)")
+    parser.add_argument("--mode", choices=["original", "train"], required=True, help="Mode to execute")
+    return parser.parse_args()
 
 def calculate_statistics(values):
     """
@@ -106,8 +112,7 @@ def add_statistics(
             df[f'{axis}_kurtosis'] = standardized_kurt
             df[f'{axis}_peak'] = standardized_peak
 
-            print(stats)
-            
+        
             # fused_feature값도 표준화된 값으로 갱신
             for i in range(len(df)):
                 fused_feature_values[i] = [
@@ -127,20 +132,13 @@ def add_statistics(
     return df
 
 
-def main(
-        yaml_config, target_config, save_model=False, 
-        save_log=False, save_figs=False
-        ):
+def draw_original_hist(yaml_config, target_config):
     
     ##############################
     # 1. initialize              
     ##############################
     funs.set_seed(yaml_config.seed)
 
-
-    ##############################
-    # 2. preprocessing           
-    ##############################
     # 데이터프레임 제작
     df = {
         "1105": [],
@@ -152,7 +150,6 @@ def main(
     date_list = target_config['date']
 
     for date in date_list:
-        print(date)
         directory_list = [os.path.join(yaml_config.output_dir, date)]
         directory = funs.get_dir_list(directory_list, target_view=target_config['view'])
         df[date] = funs.make_dataframe(yaml_config, directory)
@@ -169,8 +166,6 @@ def main(
         df_combined = pd.DataFrame()  # 빈 데이터프레임
 
 
-
-
     if len(target_config['axis']) == 1:
         axis_name = target_config['axis'][0]
     elif len(target_config['axis']) == 2:
@@ -182,7 +177,6 @@ def main(
     else:
         date_name = 'All'
         
-
     # 특징별 분포 히스토그램 플롯
     date_str = "_".join([str(date) for date in target_config["date"]])
     funs.get_stat_hist_pic(df_combined, 
@@ -190,19 +184,75 @@ def main(
                         draw_targets=list(df_combined.columns),
                         save_path=f'{yaml_config.feature_figs_dir}/{axis_name}_axis/standardization/{date_str}_feature_distribution_peak_rms.png')
         
+def draw_train_hist(yaml_config, target_config):
+    
+    directory_list = [os.path.join(yaml_config.output_dir, date) for date in target_config['date']]
+    directory = funs.get_dir_list(directory_list, target_view=target_config['view'])
+
+    # 데이터프레임 제작
+    df = funs.make_dataframe(yaml_config, directory)
+
+    train_df, val_df, test_df = funs.split_dataframe(df, 0.7, 0.3)
+
+    # 데이터 증강
+    train_df = funs.augment_dataframe(train_df, target_config['axis'], yaml_config.sample_size, yaml_config.overlap)
+    val_df = funs.augment_dataframe(val_df, target_config['axis'], yaml_config.sample_size, yaml_config.overlap)
+    test_df = funs.augment_dataframe(test_df, target_config['axis'], yaml_config.sample_size, yaml_config.overlap)
+
+    # 통계값 값 추가
+    train_df, val_df, test_df = funs.add_statistics(train_df, val_df, test_df, target_config['axis'], is_standardize=True)
+    df_combined = pd.concat([train_df, val_df, test_df], ignore_index=True)
+
+    print("총 데이터 개수:", len(train_df)+len(val_df)+len(test_df))
+    fault_type_counts = train_df["fault_type"].value_counts()
+    fault_type_counts += val_df["fault_type"].value_counts()
+    fault_type_counts += test_df["fault_type"].value_counts()
+    print(f"결함 별 데이터 개수:\n{fault_type_counts}") 
+
+    funs.get_stat_hist_pic(train_df, 
+                        main_title=f'train feature distribution',
+                        draw_targets=list(train_df.columns),
+                        save_path=f'{yaml_config.feature_figs_dir}/train/train_feature_distribution_peak_rms.png'
+                        )
+    funs.get_stat_hist_pic(val_df, 
+                    main_title=f'validation feature distribution',
+                    draw_targets=list(val_df.columns),
+                    save_path=f'{yaml_config.feature_figs_dir}/train/val_feature_distribution_peak_rms.png'
+                    )
+    funs.get_stat_hist_pic(test_df, 
+                    main_title=f'test feature distribution',
+                    draw_targets=list(test_df.columns),
+                    save_path=f'{yaml_config.feature_figs_dir}/train/test_feature_distribution_peak_rms.png'
+                    )
+    funs.get_stat_hist_pic(df_combined, 
+                    main_title=f'All feature distribution',
+                    draw_targets=list(df_combined.columns),
+                    save_path=f'{yaml_config.feature_figs_dir}/train/all_feature_distribution_peak_rms.png'
+                    )
+    
+
+
+def main():
+    funs.set_seed(yaml_config.seed)
+
+    # 실행할 함수 선택
+    if args.mode == "original":
+        draw_original_hist(yaml_config, target_config)
+    elif args.mode == "train":
+        draw_train_hist(yaml_config, target_config)
+
+
+    
 
 if __name__ == "__main__":
-    args = funs.parse_arguments()
+    args = parse_arguments()
 
     target_config = {
         'date': args.dates,
         'view': args.view,
         'axis': args.axis,
-        'input_feature': args.input_feature
     }
 
     yaml_config = funs.load_yaml('./model_config.yaml')
 
-    main(
-        yaml_config, target_config, save_figs=args.save_figs, 
-        save_model=args.save_model, save_log=args.save_log)
+    main()
