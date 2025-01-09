@@ -2,8 +2,15 @@ package com.example.useopencvwithcmakeandkotlin
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.SpannableStringBuilder
+import android.text.style.ForegroundColorSpan
+import android.text.style.StyleSpan
 import android.util.Log
 import android.view.View
 import android.widget.Button
@@ -74,11 +81,55 @@ class FaultDiagnosisActivity : AppCompatActivity() {
                     // 결과 텍스트 표시
                     resultTextView.apply {
                         visibility = View.VISIBLE
-                        text = """
-                            결함 진단 결과
-                            
-                            예상 결함: $predictedClass
-                        """.trimIndent()
+                        text = buildString {
+                            append("결함 진단 결과\n")
+                            append("\n")
+                            append(SpannableStringBuilder().apply {
+                                append("예상 결함:  ")
+                                append(SpannableString("${predictedClass}").apply {
+                                    setSpan(
+                                        StyleSpan(Typeface.BOLD),
+                                        0,
+                                        length,
+                                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                                    )
+                                    setSpan(
+                                        ForegroundColorSpan(Color.parseColor("#FF6B8E")),
+                                        0,
+                                        length,
+                                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                                    )
+                                })
+                                append("  ")
+                                append(SpannableString("${String.format("%.1f", probabilities[maxLogitIndex] * 100)}%").apply {
+                                    setSpan(
+                                        StyleSpan(Typeface.BOLD),
+                                        0,
+                                        length,
+                                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                                    )
+                                })
+                            })
+                            append("\n\n")
+                            append("다른 결함 확률\n")
+                            classes.forEachIndexed { index, className ->
+                                if (index != maxLogitIndex) {
+                                    append(SpannableStringBuilder().apply {
+                                        append("${className}  ")
+                                        append(SpannableString("${String.format("%.1f", probabilities[index] * 100)}%").apply {
+                                            setSpan(
+                                                StyleSpan(Typeface.BOLD),
+                                                0,
+                                                length,
+                                                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                                            )
+                                        })
+                                        append("\n")
+                                    })
+                                }
+                            }
+                        }
+                        setLineSpacing(0f, 1.5f)  // 줄 간격 조정
                     }
                     
                     // 완료 버튼 표시
