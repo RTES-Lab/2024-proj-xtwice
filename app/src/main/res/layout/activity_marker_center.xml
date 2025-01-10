@@ -14,7 +14,7 @@
         android:layout_marginTop="32dp"
         app:cardCornerRadius="15dp"
         app:cardElevation="4dp"
-        app:cardBackgroundColor="#555555"
+        app:cardBackgroundColor="#FFFFFF"
         app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
@@ -27,7 +27,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="STEP 6"
-                android:textColor="#FF6B8E"
+                android:textColor="#2196F3"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:letterSpacing="0.1"/>
@@ -37,7 +37,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:text="마커 좌표 및 영역 설정"
-                android:textColor="#FFFFFF"
+                android:textColor="#000000"
                 android:textSize="20sp"
                 android:textStyle="bold"/>
 
@@ -46,7 +46,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:text="마커의 위치와 분석 영역을 설정해주세요"
-                android:textColor="#FFFFFF"
+                android:textColor="#000000"
                 android:textSize="14sp"/>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
@@ -111,9 +111,10 @@
             android:layout_weight="1"
             android:layout_marginEnd="8dp"
             android:text="실행 취소"
+            android:textColor="#FFFFFF"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:backgroundTint="#FFB6C1"
+            android:backgroundTint="#90CAF9"
             android:elevation="4dp"
             android:fontFamily="@font/robotolight"
             app:cornerRadius="28dp"/>
@@ -124,9 +125,10 @@
             android:layout_height="56dp"
             android:layout_weight="1"
             android:text="확인"
+            android:textColor="#FFFFFF"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:backgroundTint="#FF6B8E"
+            android:backgroundTint="#2196F3"
             android:elevation="4dp"
             android:fontFamily="@font/robotolight"
             app:cornerRadius="28dp"/>

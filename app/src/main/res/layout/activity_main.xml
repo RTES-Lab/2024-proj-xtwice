@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:background="#E0E0E0">
 
     <androidx.cardview.widget.CardView
         android:id="@+id/stepCard"
@@ -13,7 +13,7 @@
         android:layout_marginTop="32dp"
         app:cardCornerRadius="15dp"
         app:cardElevation="4dp"
-        app:cardBackgroundColor="#555555"
+        app:cardBackgroundColor="#FFFFFF"
         app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
@@ -26,7 +26,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="STEP 1"
-                android:textColor="#FF6B8E"
+                android:textColor="#2196F3"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:letterSpacing="0.1"/>
@@ -36,7 +36,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:text="변위 추출 영상 선택"
-                android:textColor="#FFFFFF"
+                android:textColor="#000000"
                 android:textSize="20sp"
                 android:textStyle="bold"/>
 
@@ -45,7 +45,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:text="갤러리에서 분석하고 싶은 영상을 선택해주세요"
-                android:textColor="#FFFFFF"
+                android:textColor="#000000"
                 android:textSize="14sp"/>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
@@ -57,7 +57,7 @@
         android:text="갤러리에서 선택"
         android:textSize="16sp"
         android:textStyle="bold"
-        android:backgroundTint="#FF6B8E"
+        android:backgroundTint="#2196F3"
         android:elevation="4dp"
         android:fontFamily="@font/robotolight"
         android:textColor="#FFFFFF"
