@@ -108,8 +108,8 @@ def get_dir_list(
 
 
 def log_results(
-        model_name, file_path, timestamp, date, input_feature, mean_accuracy, 
-        mean_loss, class2label_dic, class_accuracies, report
+        model_name, file_path, timestamp, date, input_feature, val_accuracy, 
+        val_loss, test_accuracy, test_loss, class2label_dic, class_accuracies, val_report, test_report
         ):
     """
     결과를 CSV 파일에 로깅하는 함수
@@ -120,8 +120,10 @@ def log_results(
         "Timestamp": [timestamp],
         "사용 데이터": [date],
         "사용 특징": [input_feature],
-        "정확도": [f"{mean_accuracy:.4f}"],
-        "손실": [f"{mean_loss:.4f}"]
+        "val 정확도": [f"{val_accuracy:.4f}"],
+        "val 손실": [f"{val_loss:.4f}"],
+        "test 정확도": [f"{test_accuracy:.4f}"],
+        "test 손실": [f"{test_loss:.4f}"],
     }
     
     # 클래스별 정확도를 추가 (없을 경우 빈 값으로 처리)
@@ -131,7 +133,8 @@ def log_results(
             results[f"클래스 {class_name} 정확도"] = [f"{accuracy:.4f}"]
     
     # 성능 보고서를 추가
-    results["클래스별 성능 보고서"] = [report]
+    results["val 클래스별 성능 보고서"] = [val_report]
+    results["test 클래스별 성능 보고서"] = [test_report]
 
     # DataFrame으로 변환
     df = pd.DataFrame(results)

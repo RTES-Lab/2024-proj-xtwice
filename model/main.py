@@ -102,20 +102,23 @@ Test Accuracy: {test_accuracy:.4f}, Test Loss: {test_loss:.4f}
     ##############################
     # 5. save                    
     ##############################
-    # if save_log:
-        # current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        # funs.log_results(
-        #     model_name="ANN",
-        #     file_path = yaml_config['log_txt'],
-        #     timestamp=current_time,
-        #     date = target_config['date'],
-        #     input_feature=target_config['input_feature'],
-        #     mean_accuracy=accuracies,
-        #     mean_loss=losses,
-        #     class2label_dic = yaml_config.class2label_dic,
-        #     class_accuracies = class_accuracies,
-        #     report=report,
-        # )
+    if save_log:
+        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        funs.log_results(
+            model_name          = "ANN",
+            file_path           = yaml_config['log_csv'],
+            timestamp           = current_time,
+            date                = target_config['date'],
+            input_feature       = target_config['input_feature'],
+            val_accuracy        = val_accuracy,
+            val_loss            = val_loss,
+            test_accuracy       = test_accuracy,
+            test_loss           = test_loss,
+            class2label_dic     = yaml_config.class2label_dic,
+            class_accuracies    = class_accuracies,
+            val_report          = val_report,
+            test_report         = test_report
+        )
 
 
     # 모델 저장

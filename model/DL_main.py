@@ -15,14 +15,14 @@ import funs
 
 
 def main(
-        yaml_config, target_config, save_displacement_figs=False, 
+        yaml_config, target_config,
         save_model=False, save_log=False, compare=False
         ):
     
     ##############################
     # 1. initialize              
     ##############################
-    # funs.set_seed(yaml_config.seed)
+    funs.set_seed(yaml_config.seed)
 
     ##############################
     # 2. preprocessing           
@@ -32,60 +32,88 @@ def main(
 
     # 데이터프레임 제작
     df = funs.make_dataframe(yaml_config, directory)
+    train_df, val_df, test_df = funs.split_dataframe(df, 0.7, 0.3)
 
     # 데이터 증강
-    augmented_df = funs.augment_dataframe(df, target_config['axis'], yaml_config.sample_size, yaml_config.overlap)
+    train_df = funs.augment_dataframe(train_df, target_config['axis'], yaml_config.sample_size, yaml_config.overlap)
+    val_df = funs.augment_dataframe(val_df, target_config['axis'], yaml_config.sample_size, yaml_config.overlap)
+    test_df = funs.augment_dataframe(test_df, target_config['axis'], yaml_config.sample_size, yaml_config.overlap)
 
-    print("총 데이터 개수:", len(augmented_df))
-    fault_type_counts = augmented_df["fault_type"].value_counts()
+    print("총 데이터 개수:", len(train_df)+len(val_df)+len(test_df))
+    fault_type_counts = train_df["fault_type"].value_counts()
+    fault_type_counts += val_df["fault_type"].value_counts()
+    fault_type_counts += test_df["fault_type"].value_counts()
     print(f"결함 별 데이터 개수:\n{fault_type_counts}") 
 
-
-    ##############################
-    # 3. plot figs     
-    ##############################
-    # 변위 데이터 플롯
-    if len(target_config['axis']) == 1:
-        axis_name = target_config['axis'][0]
-    elif len(target_config['axis']) == 2:
-        axis_name = f"{target_config['axis'][0]}, {target_config['axis'][1]}"
-
-    if save_displacement_figs:
-        funs.get_displacement_pic(augmented_df, axis_name, target_config['date'])
     
     ##############################
-    # 4. train                   
+    # 3. train                   
     ##############################
     # 데이터, 라벨 얻기
-    X, Y = funs.get_data_label(augmented_df, target_config['input_feature'])
+    X_train, y_train = funs.get_data_label(train_df, target_config['input_feature'])
+    X_val, y_val = funs.get_data_label(val_df, target_config['input_feature'])
+    X_test, y_test = funs.get_data_label(test_df, target_config['input_feature'])
     print(f'input feature: {target_config["input_feature"]}')
 
-
     # PyTorch Tensor로 변환
-    data_tensor = torch.tensor(X, dtype=torch.float32).unsqueeze(1)  # Conv1d 입력 맞춤
-    label_tensor = torch.tensor(Y, dtype=torch.long)
+    X_train = torch.tensor(X_train, dtype=torch.float32).unsqueeze(1) 
+    X_val = torch.tensor(X_val, dtype=torch.float32).unsqueeze(1)  
+    X_test = torch.tensor(X_test, dtype=torch.float32).unsqueeze(1) 
+    y_train = torch.tensor(y_train, dtype=torch.long)
+    y_val = torch.tensor(y_val, dtype=torch.long)
+    y_test = torch.tensor(y_test, dtype=torch.long)
 
     # DataLoader 생성
-    dataset = TensorDataset(data_tensor, label_tensor)
-    dataloader = DataLoader(dataset, batch_size=yaml_config.batch_size, shuffle=True)
+    train_dataset = TensorDataset(X_train, y_train)
+    val_dataset = TensorDataset(X_val, y_val)
+    test_dataset = TensorDataset(X_test, y_test)
 
-    model = funs.WDCNN(n_classes=len(set(Y)))
+    train_loader = DataLoader(train_dataset, batch_size=yaml_config.batch_size, shuffle=True, drop_last=True)
+    val_loader = DataLoader(val_dataset, batch_size=yaml_config.batch_size, shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=yaml_config.batch_size, shuffle=False)
+
+    model = funs.WDCNN(n_classes=4)
     trainer = funs.DLTrainer(yaml_config)
 
-    accuracies, losses, all_y_true, all_y_pred, best_model, _ = trainer.get_best_model(model, dataloader)
-    mean_accuracy, accuracy_confidence_interval, mean_loss, loss_confidence_interval = funs.calculate_result(accuracies, losses)
+    val_accuracy_list, val_loss_list, val_true_list, val_pred_list, best_model, best_history, test_accuracy, test_loss, test_true_list, test_pred_list = trainer.get_best_model(model, train_loader, val_loader, test_loader)
 
-    all_y_true = np.concatenate([np.concatenate(arrays) for arrays in all_y_true])
-    all_y_pred = np.concatenate([np.concatenate(arrays) for arrays in all_y_pred])
+    val_acc = np.mean(val_accuracy_list)
+    val_loss = np.mean(val_loss_list)
+    test_accuracy = np.mean(test_accuracy)
+    test_loss = np.mean(test_loss)
 
-    report = classification_report(all_y_true, all_y_pred, target_names=['B', 'H', 'IR', 'OR'], digits=4)
+    val_true_list = np.concatenate(val_true_list, axis=0)
+    val_pred_list = np.concatenate(val_pred_list, axis=0)
+
+
+    print()
+    print("val 평균 정확도:", val_acc)
+    print("val 평균 손실:", val_loss)
+    print("테스트 성능")
+    print("test 정확도:", test_accuracy)
+    print("test 손실:", test_loss)
+
+    val_report = classification_report(val_true_list, val_pred_list, target_names=['B', 'H', 'IR', 'OR'], digits=4)
     print('클래스별 성능 보고서')
-    print(report)
+    print(val_report)
+    class_accuracies = {}
+    for class_label in np.unique(val_true_list):
+        correct_class_predictions = np.sum((val_true_list == class_label) & (val_pred_list == class_label))
+        total_class_samples = np.sum(val_true_list == class_label)
+        class_accuracies[class_label] = correct_class_predictions / total_class_samples if total_class_samples > 0 else 0
+
+    print("클래스별 정확도:")
+    for class_label, accuracy in class_accuracies.items():
+        print(f"클래스 {yaml_config.class2label_dic[class_label]}: {accuracy:.4f}")
+
+    test_report = classification_report(test_true_list, test_pred_list, target_names=['B', 'H', 'IR', 'OR'], digits=4)
+    print('클래스별 성능 보고서')
+    print(test_report)
 
     class_accuracies = {}
-    for class_label in np.unique(all_y_true):
-        correct_class_predictions = np.sum((all_y_true == class_label) & (all_y_pred == class_label))
-        total_class_samples = np.sum(all_y_true == class_label)
+    for class_label in np.unique(test_true_list):
+        correct_class_predictions = np.sum((test_true_list == class_label) & (test_pred_list == class_label))
+        total_class_samples = np.sum(test_true_list == class_label)
         class_accuracies[class_label] = correct_class_predictions / total_class_samples if total_class_samples > 0 else 0
 
     print("클래스별 정확도:")
@@ -99,18 +127,21 @@ def main(
     if save_log:
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         funs.log_results(
-            file_path = yaml_config['log_txt'],
-            timestamp=current_time,
-            date = target_config['date'],
-            input_feature=target_config['input_feature'],
-            mean_accuracy=mean_accuracy,
-            accuracy_confidence_interval=accuracy_confidence_interval,
-            mean_loss=mean_loss,
-            loss_confidence_interval=loss_confidence_interval,
-            class2label_dic = yaml_config.class2label_dic,
-            class_accuracies = class_accuracies,
-            report=report,
+            model_name          = "WDCNN",
+            file_path           = yaml_config['log_csv'],
+            timestamp           = current_time,
+            date                = target_config['date'],
+            input_feature       = target_config['input_feature'],
+            val_accuracy        = val_acc,
+            val_loss            = val_loss,
+            test_accuracy       = test_accuracy,
+            test_loss           = test_loss,
+            class2label_dic     = yaml_config.class2label_dic,
+            class_accuracies    = class_accuracies,
+            val_report          = val_report,
+            test_report         = test_report
         )
+
 
     if save_model:
         # pth 모델 저장
@@ -128,22 +159,19 @@ def main(
         optimized_scripted_module._save_for_lite_interpreter(model_save_path)
         print(f"모델이 {model_save_path}에 저장되었습니다.")
         
-    if compare:
-        """ funs.set_seed(yaml_config.seed) 를 주석처리 할 것 """
-        # ptl 모델과 torch 모델 결과 비교
-        funs.compare_torch_n_ptl(augmented_df, model_save_path, best_model)
 
 if __name__ == "__main__":
+    args = funs.parse_arguments()
+
     target_config = {
-        'date': ['1105', '1217'],           # 필수
-        # 'date': ['1011', '1012', '1024', '1102', '1105', '1217'],         # 필수
-        # 'bearing_type': '6204',   # optional
-        # 'RPM': '1200',            # optional
-        'view': 'F',                # optional
-        'axis': ['z'],              # 필수. ['z'] or ['x'] or ['z', 'x'] 
-        'input_feature': 'z'    # 필수. 딥러닝의 경우 반드시 'z'
+        'date': args.dates,
+        'view': args.view,
+        'axis': args.axis,
+        'input_feature': args.input_feature
     }
 
     yaml_config = funs.load_yaml('./model_config.yaml')
 
-    main(yaml_config, target_config, save_displacement_figs=False, save_model=True, save_log=False, compare=False)
+    main(
+        yaml_config, target_config, 
+        save_model=args.save_model, save_log=args.save_log, compare=args.compare)
