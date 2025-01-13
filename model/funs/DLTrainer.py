@@ -1,25 +1,20 @@
 # DLTrainer.py
-# main.py
 
 import os
 import datetime
 import random
 
-import numpy as np
 import torch
 from torch.utils.data import DataLoader, TensorDataset
-from torch.utils.mobile_optimizer import optimize_for_mobile
-
-from sklearn.metrics import classification_report
-
-import funs
-import torch
-from torch.utils.data import DataLoader
 from torch.optim import Adam
 from torch.nn import CrossEntropyLoss
+from torch.utils.mobile_optimizer import optimize_for_mobile
 
-from sklearn.model_selection import KFold
 import numpy as np
+
+from sklearn.metrics import classification_report
+from sklearn.model_selection import KFold
+
 
 class DLTrainer:
     def __init__(self, yaml_config):
@@ -67,7 +62,7 @@ class DLTrainer:
         val_loss /= len(val_loader)
         val_accuracy = correct / total
         return val_loss, val_accuracy, all_y_true, all_y_pred
-
+    
     def get_best_model(self, model, data_loader, n_splits=10):
         kfold = KFold(n_splits=n_splits, shuffle=True, random_state=self.yaml_config.seed)  
         dataset = data_loader.dataset

@@ -30,29 +30,18 @@ def main(
 
     # 데이터프레임 제작
     df = funs.make_dataframe(yaml_config, directory)
-    # train_df, val_df, test_df = funs.split_dataframe(df, 0.7, 0.3)
 
     # 데이터 증강
     df = funs.augment_dataframe(df, target_config['axis'], yaml_config.sample_size, yaml_config.overlap)
-    # val_df = funs.augment_dataframe(val_df, target_config['axis'], yaml_config.sample_size, yaml_config.overlap)
-    # test_df = funs.augment_dataframe(test_df, target_config['axis'], yaml_config.sample_size, yaml_config.overlap)
 
     # 통계값 값 추가
     df = funs.add_statistics(df, target_config['axis'], is_standardize=False)
 
-    # print("총 데이터 개수:", len(train_df)+len(val_df)+len(test_df))
-    # fault_type_counts = train_df["fault_type"].value_counts()
-    # fault_type_counts += val_df["fault_type"].value_counts()
-    # fault_type_counts += test_df["fault_type"].value_counts()
-    # print(f"결함 별 데이터 개수:\n{fault_type_counts}") 
-    
     ##############################
     # 3. train                   
     ##############################
     # 데이터, 라벨 얻기
     X, Y = funs.get_data_label(df, target_config['input_feature'])
-    # X_val, y_val = funs.get_data_label(val_df, target_config['input_feature'])
-    # X_test, y_test = funs.get_data_label(test_df, target_config['input_feature'])
     print(f'input feature: {target_config["input_feature"]}')
 
     model = funs.ANN()
@@ -63,8 +52,6 @@ def main(
 
     val_true_list = np.concatenate(all_y_true, axis=0)
     val_pred_list = np.concatenate(all_y_pred, axis=0)
-    # test_true_list = np.concatenate(test_true_list, axis=0)
-    # test_pred_list = np.concatenate(test_pred_list, axis=0)
 
     val_report = classification_report(val_true_list, val_pred_list, target_names=['B', 'H', 'IR', 'OR'], digits=4)
     
@@ -85,20 +72,6 @@ Validation Accuracy: {mean_accuracy:.4f}, Validation Loss: {mean_loss:.4f}
     print("클래스별 정확도:")
     for class_label, accuracy in class_accuracies.items():
         print(f"클래스 {yaml_config.class2label_dic[class_label]}: {accuracy:.4f}")
-
-    # test_report = classification_report(test_true_list, test_pred_list, target_names=['B', 'H', 'IR', 'OR'], digits=4)
-    # print('Test 클래스별 성능 보고서')
-    # print(test_report)
-
-    # class_accuracies = {}
-    # for class_label in np.unique(test_true_list):
-    #     correct_class_predictions = np.sum((test_true_list == class_label) & (test_pred_list == class_label))
-    #     total_class_samples = np.sum(test_true_list == class_label)
-    #     class_accuracies[class_label] = correct_class_predictions / total_class_samples if total_class_samples > 0 else 0
-
-    # print("클래스별 정확도:")
-    # for class_label, accuracy in class_accuracies.items():
-    #     print(f"클래스 {yaml_config.class2label_dic[class_label]}: {accuracy:.4f}")
 
 
     ##############################

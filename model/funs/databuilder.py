@@ -11,10 +11,7 @@ from box import Box
 from typing import List, Tuple, Optional
 
 from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.preprocessing import StandardScaler
-from sklearn.preprocessing import MaxAbsScaler
-from sklearn.preprocessing import RobustScaler
+
 
 def make_dataframe(
         config: Box, directory_list: List[str], target_marker: Optional[str] = 'A', max_len: Optional[int] = None
@@ -43,7 +40,6 @@ def make_dataframe(
     df['dir_name'] = []
     df['fault_type'] = []
     df['label'] = []
-    scaler = MinMaxScaler()
 
     label_dic = config.label_dic
 
