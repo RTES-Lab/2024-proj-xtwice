@@ -45,7 +45,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="측정된 변위를 분석하여 결함을 판정합니다"
+                android:text="측정된 변위를 분석하여 결함을 판정합니다."
                 android:textColor="#000000"
                 android:textSize="14sp"/>
         </LinearLayout>
@@ -89,7 +89,8 @@
             android:textSize="20sp"
             android:textColor="#2C3E50"
             android:fontFamily="@font/robotolight"
-            android:lineSpacingMultiplier="1.5"/>
+            android:lineSpacingMultiplier="1.5"
+            android:textIsSelectable="false"/>
 
     </LinearLayout>
 

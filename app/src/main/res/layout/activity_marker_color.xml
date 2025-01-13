@@ -45,7 +45,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="분석 결과를 표시할 마커의 색상을 선택해주세요"
+                android:text="분석 결과를 표시할 마커의 색상을 선택해주세요."
                 android:textColor="#000000"
                 android:textSize="14sp"/>
         </LinearLayout>

@@ -30,6 +30,7 @@
         app:layout_constraintEnd_toEndOf="parent"/>
 
     <androidx.cardview.widget.CardView
+        android:id="@+id/mainCardView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="20dp"
@@ -112,6 +113,42 @@
                     android:textColor="#000000"
                     android:textSize="16sp"/>
             </LinearLayout>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/guideCardView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="20dp"
+        app:cardCornerRadius="15dp"
+        app:cardElevation="4dp"
+        app:cardBackgroundColor="#FFFFFF"
+        app:layout_constraintTop_toBottomOf="@id/mainCardView">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="촬영 가이드"
+                android:textColor="#2196F3"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:text="• 동영상 길이는 10초 이상 촬영해주세요.\n• 정확한 결함 탐지를 위해 최소 2400프레임이 필요합니다.\n• 지원되는 동영상 형식: MP4, AVI, MOV, MKV"
+                android:textColor="#000000"/>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 

@@ -45,9 +45,31 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="분석하고 싶은 영역을 선택해주세요"
+                android:text="분석하고 싶은 영역을 선택해주세요."
                 android:textColor="#000000"
                 android:textSize="14sp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="#F5F5F5"
+                android:padding="12dp"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:text="※ ROI 설정 가이드"
+                android:textStyle="bold"
+                android:textColor="#000000"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:paddingHorizontal="12dp"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:text="• 마커만 타이트하게 자르지 말고, 주변 영역을 충분히 포함해주세요."
+                android:textColor="#000000"/>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 

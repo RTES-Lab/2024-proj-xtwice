@@ -42,6 +42,7 @@ class FaultDiagnosisActivity : AppCompatActivity() {
 
         // TextView에 추론 결과를 표시
         resultTextView = findViewById(R.id.resultTextView)
+        resultTextView.movementMethod = android.text.method.LinkMovementMethod.getInstance()
         progressBar = findViewById(R.id.progressBar)
         statusTextView = findViewById(R.id.statusTextView)
         finishButton = findViewById(R.id.finishButton)
@@ -81,54 +82,56 @@ class FaultDiagnosisActivity : AppCompatActivity() {
                     // 결과 텍스트 표시
                     resultTextView.apply {
                         visibility = View.VISIBLE
-                        text = buildString {
-                            append("결함 진단 결과\n")
-                            append("\n")
-                            append(SpannableStringBuilder().apply {
-                                append("예상 결함:  ")
-                                append(SpannableString("${predictedClass}").apply {
-                                    setSpan(
-                                        StyleSpan(Typeface.BOLD),
-                                        0,
-                                        length,
-                                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-                                    )
-                                    setSpan(
-                                        ForegroundColorSpan(Color.parseColor("#FF6B8E")),
-                                        0,
-                                        length,
-                                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-                                    )
-                                })
-                                append("  ")
-                                append(SpannableString("${String.format("%.1f", probabilities[maxLogitIndex] * 100)}%").apply {
-                                    setSpan(
-                                        StyleSpan(Typeface.BOLD),
-                                        0,
-                                        length,
-                                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-                                    )
-                                })
-                            })
-                            append("\n\n")
-                            append("다른 결함 확률\n")
-                            classes.forEachIndexed { index, className ->
-                                if (index != maxLogitIndex) {
-                                    append(SpannableStringBuilder().apply {
-                                        append("${className}  ")
-                                        append(SpannableString("${String.format("%.1f", probabilities[index] * 100)}%").apply {
-                                            setSpan(
-                                                StyleSpan(Typeface.BOLD),
-                                                0,
-                                                length,
-                                                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-                                            )
-                                        })
-                                        append("\n")
-                                    })
-                                }
+                        val spannableString = SpannableStringBuilder()
+                        spannableString.append("결함 진단 결과\n\n")
+                        
+                        // "예상 결함: " 텍스트 추가
+                        spannableString.append("예상 결함:  ")
+                        
+                        // 결함 종류와 확률을 SpannableString으로 생성
+                        val resultText = "${predictedClass}  ${String.format("%.1f", probabilities[maxLogitIndex] * 100)}%"
+                        val resultSpan = SpannableString(resultText)
+                        
+                        // 결함 종류에 따라 색상 설정
+                        val color = when (predictedClass) {
+                            "H" -> Color.parseColor("#1976D2")  // 파란색
+                            else -> Color.parseColor("#D32F2F")  // 빨간색 (IR, B, OR의 경우)
+                        }
+                        
+                        // 전체 텍스트에 볼드체와 색상 적용
+                        resultSpan.setSpan(
+                            StyleSpan(Typeface.BOLD),
+                            0,
+                            resultText.length,
+                            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                        )
+                        resultSpan.setSpan(
+                            ForegroundColorSpan(color),
+                            0,
+                            resultText.length,
+                            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                        )
+                        
+                        spannableString.append(resultSpan)
+                        spannableString.append("\n\n다른 결함 확률\n")
+                        
+                        // 다른 결함 확률 표시
+                        classes.forEachIndexed { index, className ->
+                            if (index != maxLogitIndex) {
+                                val probText = "${className}  ${String.format("%.1f", probabilities[index] * 100)}%\n"
+                                val probSpan = SpannableString(probText)
+                                probSpan.setSpan(
+                                    StyleSpan(Typeface.BOLD),
+                                    className.length + 2,  // 클래스 이름과 공백 이후부터
+                                    probText.length - 1,   // 줄바꿈 문자 전까지
+                                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                                )
+                                spannableString.append(probSpan)
                             }
                         }
+                        
+                        // TextView에 적용
+                        text = spannableString
                         setLineSpacing(0f, 1.5f)  // 줄 간격 조정
                     }
                     

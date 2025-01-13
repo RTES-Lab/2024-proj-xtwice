@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:background="#E0E0E0">
 
     <androidx.cardview.widget.CardView
         android:id="@+id/stepCard"
@@ -45,9 +45,53 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="마커의 위치와 분석 영역을 설정해주세요"
+                android:text="마커의 위치와 분석 영역을 설정해주세요."
                 android:textColor="#000000"
                 android:textSize="14sp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="#F5F5F5"
+                android:padding="12dp"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:text="※ 마커 설정 가이드"
+                android:textStyle="bold"
+                android:textColor="#000000"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:paddingHorizontal="12dp"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:text="• 마커의 대략적인 중심부에 점을 찍어주세요.\n• 정확한 중앙이 아니어도 괜찮습니다."
+                android:textColor="#000000"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="#F5F5F5"
+                android:padding="12dp"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:text="※ 분석 영역(네모 박스) 설정 가이드"
+                android:textStyle="bold"
+                android:textColor="#000000"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:paddingHorizontal="12dp"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:text="• 마커가 움직일 것으로 예상되는 범위보다 여유있게 설정해주세요.\n• 너무 타이트하게 설정하면 마커 추적이 어려울 수 있습니다."
+                android:textColor="#000000"/>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
@@ -68,7 +112,7 @@
         android:layout_marginHorizontal="20dp"
         app:cardCornerRadius="15dp"
         app:cardElevation="4dp"
-        app:cardBackgroundColor="#F5F5F5"
+        app:cardBackgroundColor="#FFFFFF"
         android:layout_marginVertical="8dp"
         app:layout_constraintBottom_toTopOf="@id/buttonLayout">
 
