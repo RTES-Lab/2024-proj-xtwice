@@ -30,47 +30,49 @@ def main(
 
     # 데이터프레임 제작
     df = funs.make_dataframe(yaml_config, directory)
-    train_df, val_df, test_df = funs.split_dataframe(df, 0.7, 0.3)
+    # train_df, val_df, test_df = funs.split_dataframe(df, 0.7, 0.3)
 
     # 데이터 증강
-    train_df = funs.augment_dataframe(train_df, target_config['axis'], yaml_config.sample_size, yaml_config.overlap)
-    val_df = funs.augment_dataframe(val_df, target_config['axis'], yaml_config.sample_size, yaml_config.overlap)
-    test_df = funs.augment_dataframe(test_df, target_config['axis'], yaml_config.sample_size, yaml_config.overlap)
+    df = funs.augment_dataframe(df, target_config['axis'], yaml_config.sample_size, yaml_config.overlap)
+    # val_df = funs.augment_dataframe(val_df, target_config['axis'], yaml_config.sample_size, yaml_config.overlap)
+    # test_df = funs.augment_dataframe(test_df, target_config['axis'], yaml_config.sample_size, yaml_config.overlap)
 
     # 통계값 값 추가
-    train_df, val_df, test_df = funs.add_statistics(train_df, val_df, test_df, target_config['axis'], is_standardize=True)
+    df = funs.add_statistics(df, target_config['axis'], is_standardize=False)
 
-    print("총 데이터 개수:", len(train_df)+len(val_df)+len(test_df))
-    fault_type_counts = train_df["fault_type"].value_counts()
-    fault_type_counts += val_df["fault_type"].value_counts()
-    fault_type_counts += test_df["fault_type"].value_counts()
-    print(f"결함 별 데이터 개수:\n{fault_type_counts}") 
+    # print("총 데이터 개수:", len(train_df)+len(val_df)+len(test_df))
+    # fault_type_counts = train_df["fault_type"].value_counts()
+    # fault_type_counts += val_df["fault_type"].value_counts()
+    # fault_type_counts += test_df["fault_type"].value_counts()
+    # print(f"결함 별 데이터 개수:\n{fault_type_counts}") 
     
     ##############################
     # 3. train                   
     ##############################
     # 데이터, 라벨 얻기
-    X_train, y_train = funs.get_data_label(train_df, target_config['input_feature'])
-    X_val, y_val = funs.get_data_label(val_df, target_config['input_feature'])
-    X_test, y_test = funs.get_data_label(test_df, target_config['input_feature'])
+    X, Y = funs.get_data_label(df, target_config['input_feature'])
+    # X_val, y_val = funs.get_data_label(val_df, target_config['input_feature'])
+    # X_test, y_test = funs.get_data_label(test_df, target_config['input_feature'])
     print(f'input feature: {target_config["input_feature"]}')
 
     model = funs.ANN()
     trainer = funs.Trainer(yaml_config)
     
-    val_accuracy, val_loss, test_accuracy, test_loss, test_true_list, test_pred_list, val_true_list, val_pred_list = trainer.get_best_model(model, X_train, y_train, X_val, y_val, X_test, y_test)
+    accuracies, losses, all_y_true, all_y_pred = trainer.get_best_model(model, X, Y)
+    mean_accuracy, accuracy_confidence_interval, mean_loss, loss_confidence_interval = funs.calculate_result(accuracies, losses)
 
-    print(f"""
-Validation Accuracy: {val_accuracy:.4f}, Validation Loss: {val_loss:.4f}
-Test Accuracy: {test_accuracy:.4f}, Test Loss: {test_loss:.4f}
-    """)
-
-    val_true_list = np.concatenate(val_true_list, axis=0)
-    val_pred_list = np.concatenate(val_pred_list, axis=0)
-    test_true_list = np.concatenate(test_true_list, axis=0)
-    test_pred_list = np.concatenate(test_pred_list, axis=0)
+    val_true_list = np.concatenate(all_y_true, axis=0)
+    val_pred_list = np.concatenate(all_y_pred, axis=0)
+    # test_true_list = np.concatenate(test_true_list, axis=0)
+    # test_pred_list = np.concatenate(test_pred_list, axis=0)
 
     val_report = classification_report(val_true_list, val_pred_list, target_names=['B', 'H', 'IR', 'OR'], digits=4)
+    
+    print(f"""
+Validation Accuracy: {mean_accuracy:.4f}, Validation Loss: {mean_loss:.4f}
+    """)
+
+
     print('Validation 클래스별 성능 보고서')
     print(val_report)
 
@@ -84,19 +86,19 @@ Test Accuracy: {test_accuracy:.4f}, Test Loss: {test_loss:.4f}
     for class_label, accuracy in class_accuracies.items():
         print(f"클래스 {yaml_config.class2label_dic[class_label]}: {accuracy:.4f}")
 
-    test_report = classification_report(test_true_list, test_pred_list, target_names=['B', 'H', 'IR', 'OR'], digits=4)
-    print('Test 클래스별 성능 보고서')
-    print(test_report)
+    # test_report = classification_report(test_true_list, test_pred_list, target_names=['B', 'H', 'IR', 'OR'], digits=4)
+    # print('Test 클래스별 성능 보고서')
+    # print(test_report)
 
-    class_accuracies = {}
-    for class_label in np.unique(test_true_list):
-        correct_class_predictions = np.sum((test_true_list == class_label) & (test_pred_list == class_label))
-        total_class_samples = np.sum(test_true_list == class_label)
-        class_accuracies[class_label] = correct_class_predictions / total_class_samples if total_class_samples > 0 else 0
+    # class_accuracies = {}
+    # for class_label in np.unique(test_true_list):
+    #     correct_class_predictions = np.sum((test_true_list == class_label) & (test_pred_list == class_label))
+    #     total_class_samples = np.sum(test_true_list == class_label)
+    #     class_accuracies[class_label] = correct_class_predictions / total_class_samples if total_class_samples > 0 else 0
 
-    print("클래스별 정확도:")
-    for class_label, accuracy in class_accuracies.items():
-        print(f"클래스 {yaml_config.class2label_dic[class_label]}: {accuracy:.4f}")
+    # print("클래스별 정확도:")
+    # for class_label, accuracy in class_accuracies.items():
+    #     print(f"클래스 {yaml_config.class2label_dic[class_label]}: {accuracy:.4f}")
 
 
     ##############################
@@ -110,14 +112,13 @@ Test Accuracy: {test_accuracy:.4f}, Test Loss: {test_loss:.4f}
             timestamp           = current_time,
             date                = target_config['date'],
             input_feature       = target_config['input_feature'],
-            val_accuracy        = val_accuracy,
-            val_loss            = val_loss,
-            test_accuracy       = test_accuracy,
-            test_loss           = test_loss,
+            mean_accuracy        = mean_accuracy,
+            mean_loss            = mean_loss,
             class2label_dic     = yaml_config.class2label_dic,
             class_accuracies    = class_accuracies,
             val_report          = val_report,
-            test_report         = test_report
+            accuracy_confidence_interval= accuracy_confidence_interval,
+            loss_confidence_interval=loss_confidence_interval
         )
 
 

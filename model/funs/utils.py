@@ -10,6 +10,7 @@ from box import Box
 from typing import List, Optional, Union
 
 import torch
+import tensorflow as tf
 import numpy as np
 import pandas as pd
 import scipy.stats as stats
@@ -49,7 +50,7 @@ def set_seed(seed: int):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    # tf.random.set_seed(seed) 
+    tf.random.set_seed(seed) 
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
 
@@ -108,8 +109,8 @@ def get_dir_list(
 
 
 def log_results(
-        model_name, file_path, timestamp, date, input_feature, val_accuracy, 
-        val_loss, test_accuracy, test_loss, class2label_dic, class_accuracies, val_report, test_report
+        model_name, file_path, timestamp, date, input_feature, mean_accuracy, 
+        mean_loss, class2label_dic, class_accuracies, val_report, accuracy_confidence_interval, loss_confidence_interval
         ):
     """
     결과를 CSV 파일에 로깅하는 함수
@@ -120,10 +121,8 @@ def log_results(
         "Timestamp": [timestamp],
         "사용 데이터": [date],
         "사용 특징": [input_feature],
-        "val 정확도": [f"{val_accuracy:.4f}"],
-        "val 손실": [f"{val_loss:.4f}"],
-        "test 정확도": [f"{test_accuracy:.4f}"],
-        "test 손실": [f"{test_loss:.4f}"],
+        "val 정확도": [f"{mean_accuracy:.4f} ± {accuracy_confidence_interval[1] - mean_accuracy:.4f}"],
+        "val 손실": [f"{mean_loss:.4f} ± {loss_confidence_interval[1] - mean_loss:.4f}"],
     }
     
     # 클래스별 정확도를 추가 (없을 경우 빈 값으로 처리)
@@ -134,7 +133,6 @@ def log_results(
     
     # 성능 보고서를 추가
     results["val 클래스별 성능 보고서"] = [val_report]
-    results["test 클래스별 성능 보고서"] = [test_report]
 
     # DataFrame으로 변환
     df = pd.DataFrame(results)
@@ -145,6 +143,7 @@ def log_results(
     df.to_csv(file_path, mode=mode, header=header, index=False, encoding='utf-8-sig')
         
     print(f"결과가 {file_path}에 저장되었습니다.")
+
 
 
 def calculate_result(accuracy, loss):
@@ -160,6 +159,18 @@ def calculate_result(accuracy, loss):
         accuracy_confidence_interval = [0.0, 0.0]
         loss_confidence_interval = [0.0, 0.0]
 
+        # 신뢰구간 계산
+        if accuracy_variance > 0:
+            accuracy_confidence_interval = stats.t.interval(0.95, len(accuracy)-1, loc=mean_accuracy, scale=stats.sem(accuracy))
+            print(f"정확도: {mean_accuracy:.4f} ± {accuracy_confidence_interval[1] - mean_accuracy:.4f}")
+        else:
+            print(f"정확도: {mean_accuracy:.4f} (변동이 없어 신뢰구간을 계산할 수 없습니다.)")
+
+        if loss_variance > 0:
+            loss_confidence_interval = stats.t.interval(0.95, len(loss)-1, loc=mean_loss, scale=stats.sem(loss))
+            print(f"손실: {mean_loss:.4f} ± {loss_confidence_interval[1] - mean_loss:.4f}")
+        else:
+            print(f"손실: {mean_loss:.4f} (변동이 없어 신뢰구간을 계산할 수 없습니다.)")
 
     return mean_accuracy, accuracy_confidence_interval, mean_loss, loss_confidence_interval
 
@@ -172,6 +183,8 @@ def get_random_fault_data(df: pd.DataFrame):
     해당 함수를 수행할 땐 랜덤시드를 고정하지 말 것
     """
     random_index = random.randint(0, len(df) - 1)
+    # random_index = 1
+
     
     row = df.iloc[random_index]
     fault_class = row["fault_type_encoded"]
@@ -198,25 +211,26 @@ def predict_with_ptl(model_path: str, data: List):
     # 예측 수행
     with torch.no_grad():
         outputs = loaded_model(data_tensor) 
+        print(data_tensor)
+        print(outputs)
         predictions = torch.argmax(outputs, dim=1)  
 
     return predictions
 
 
 def predict_with_torch(best_model: torch.nn.Module, data: List):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    best_model = best_model.to(device)
+    best_model = best_model
     best_model.eval()
 
     # PyTorch 텐서로 변환
     data_tensor = torch.tensor(data, dtype=torch.float32).unsqueeze(0).unsqueeze(1)
-    data_tensor = data_tensor.to(device)
+    data_tensor = data_tensor
     
     # 예측 수행
     with torch.no_grad():
         outputs = best_model(data_tensor)
-        outputs = outputs.to(device)
+        outputs = outputs
         _, predictions = torch.max(outputs, 1)
 
     return predictions

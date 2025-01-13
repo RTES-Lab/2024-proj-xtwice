@@ -11,6 +11,10 @@ from box import Box
 from typing import List, Tuple, Optional
 
 from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MaxAbsScaler
+from sklearn.preprocessing import RobustScaler
 
 def make_dataframe(
         config: Box, directory_list: List[str], target_marker: Optional[str] = 'A', max_len: Optional[int] = None
@@ -39,6 +43,7 @@ def make_dataframe(
     df['dir_name'] = []
     df['fault_type'] = []
     df['label'] = []
+    scaler = MinMaxScaler()
 
     label_dic = config.label_dic
 
@@ -76,39 +81,39 @@ def make_dataframe(
 
     return pd.DataFrame(df)
 
-def split_dataframe(df: pd.DataFrame, train_ratio: float, val_ratio: float):
+# def split_dataframe(df: pd.DataFrame, train_ratio: float, val_ratio: float):
 
-    cum_train_ratio = train_ratio
-    cum_val_ratio = cum_train_ratio + val_ratio
+#     cum_train_ratio = train_ratio
+#     cum_val_ratio = cum_train_ratio + val_ratio
 
-    train_df = {"z":[], "label":[], "fault_type":[]}
-    val_df = {"z":[], "label":[], "fault_type":[]}
-    test_df = {"z":[], "label":[], "fault_type":[]}
+#     train_df = {"z":[], "label":[], "fault_type":[]}
+#     val_df = {"z":[], "label":[], "fault_type":[]}
+#     test_df = {"z":[], "label":[], "fault_type":[]}
 
-    for _, row in df.iterrows():
-        if "0108" in row.dir_name:
-            test_df["z"].append(row.z)
-            test_df["label"].append(row.label)
-            test_df["fault_type"].append(row.fault_type)
-        else:
-            segment_length = row.z.size
-            train_idx = (int)(segment_length * cum_train_ratio)
-            val_idx = (int)(segment_length * cum_val_ratio)
+#     for _, row in df.iterrows():
+#         if "0108" in row.dir_name:
+#             test_df["z"].append(row.z)
+#             test_df["label"].append(row.label)
+#             test_df["fault_type"].append(row.fault_type)
+#         else:
+#             segment_length = row.z.size
+#             train_idx = (int)(segment_length * cum_train_ratio)
+#             val_idx = (int)(segment_length * cum_val_ratio)
 
-            train_df["z"].append(row.z[:train_idx])
-            train_df["label"].append(row.label)
-            train_df["fault_type"].append(row.fault_type)
+#             train_df["z"].append(row.z[:train_idx])
+#             train_df["label"].append(row.label)
+#             train_df["fault_type"].append(row.fault_type)
 
-            val_df["z"].append(row.z[train_idx:])
-            val_df["label"].append(row.label)
-            val_df["fault_type"].append(row.fault_type)
+#             val_df["z"].append(row.z[train_idx:])
+#             val_df["label"].append(row.label)
+#             val_df["fault_type"].append(row.fault_type)
 
 
-    train_df = pd.DataFrame(train_df)
-    val_df = pd.DataFrame(val_df)
-    test_df = pd.DataFrame(test_df)
+#     train_df = pd.DataFrame(train_df)
+#     val_df = pd.DataFrame(val_df)
+#     test_df = pd.DataFrame(test_df)
 
-    return train_df, val_df, test_df
+#     return train_df, val_df, test_df
 
 def sliding_window_augmentation(data, window_size=2048, overlap=1024):
     """
@@ -152,110 +157,27 @@ def normalize_data(data: np.ndarray) -> np.ndarray:
     # 표준화
     standardized_data = (data - means) / std_devs
 
-    return means, std_devs, standardized_data
+    return standardized_data
 
-def add_statistics(
-    train_df: pd.DataFrame,
-    val_df: pd.DataFrame,
-    test_df: pd.DataFrame,
-    target_axis: List[str],
-    is_standardize: bool = True
-) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def add_statistics(df: pd.DataFrame, target_axis: List[str], is_standardize: bool = True) -> pd.DataFrame:
     """
-    각 데이터프레임에 통계 특성을 추가하고, train_df의 각 특성별 평균과 표준편차를 기준으로 표준화합니다.
-    
-    Args:
-        train_df: 학습 데이터프레임
-        val_df: 검증 데이터프레임
-        test_df: 테스트 데이터프레임
-        target_axis: 통계를 계산할 축 목록
-        is_standardize: 표준화 여부
-    
-    Returns:
-        처리된 train_df, val_df, test_df를 튜플로 반환
+    주어진 데이터프레임에서 특정 축에 대해 통계적 특성을 계산하여
+    이를 데이터프레임에 새로운 열로 추가하고 Standardization을 선택적으로 적용하는 함수.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        통계 값을 추가할 원본 데이터프레임. 반드시 target_axis에 해당하는 데이터가 포함되어야 함.
+    target_axis : list
+        통계 값을 계산할 대상 축의 이름 리스트. e.g., ['x', 'z']
+    standardized : bool, optional
+        True일 경우 Standardization을 적용하고, False일 경우 원본 값을 사용. 기본값은 True.
+
+    Returns
+    -------
+    pd.DataFrame
+        선택적으로 Standardization된 통계 값이 추가된 데이터프레임.
     """
-    
-    df_dict = {
-        'train': train_df,
-        'val': val_df,
-        'test': test_df
-    }
-    
-    # train 데이터의 특성별 평균과 표준편차를 저장할 딕셔너리
-    train_stats = {}
-    
-    for axis in target_axis:
-        if axis not in train_df.columns:
-            raise ValueError(f"Target axis '{axis}' not found in DataFrame columns.")
-            
-        for df_name, df in df_dict.items():
-            # 각 축에 대해 결과 리스트 초기화
-            rms_values = []
-            peak_values = []
-            skewness_values = []
-            kurtosis_values = []
-            fused_feature_values = []
-            
-            # 통계 값 계산
-            for sample in df[axis]:
-                peak, _, rms, _, _, skew, kurt = calculate_statistics(sample)
-                rms_values.append(rms)
-                peak_values.append(peak)
-                skewness_values.append(skew)
-                kurtosis_values.append(kurt)
-                fused_feature_values.append([rms, skew, kurt])
-            
-            if is_standardize:
-                if df_name == 'train':
-                    # train 데이터의 각 특성별 평균과 표준편차 계산
-                    train_stats[axis] = {
-                        'rms': {'mean': np.mean(rms_values), 'std': np.std(rms_values)},
-                        'skewness': {'mean': np.mean(skewness_values), 'std': np.std(skewness_values)},
-                        'kurtosis': {'mean': np.mean(kurtosis_values), 'std': np.std(kurtosis_values)},
-                        'peak': {'mean': np.mean(peak_values), 'std': np.std(peak_values)}
-                    }
-                
-                # train에서 계산된 평균과 표준편차로 각 특성별 표준화
-                stats = train_stats[axis]
-                
-                # RMS 표준화
-                standardized_rms = (np.array(rms_values) - stats['rms']['mean']) / stats['rms']['std']
-                
-                # Skewness 표준화
-                standardized_skew = (np.array(skewness_values) - stats['skewness']['mean']) / stats['skewness']['std']
-                
-                # Kurtosis 표준화
-                standardized_kurt = (np.array(kurtosis_values) - stats['kurtosis']['mean']) / stats['kurtosis']['std']
-                
-                # Peak 표준화
-                standardized_peak = (np.array(peak_values) - stats['peak']['mean']) / stats['peak']['std']
-                
-                # 표준화된 값 데이터프레임에 추가
-                df[f'{axis}_rms'] = standardized_rms
-                df[f'{axis}_skewness'] = standardized_skew
-                df[f'{axis}_kurtosis'] = standardized_kurt
-                df[f'{axis}_peak'] = standardized_peak
-                
-                # fused_feature값도 표준화된 값으로 갱신
-                for i in range(len(df)):
-                    fused_feature_values[i] = [
-                        standardized_rms[i],
-                        standardized_skew[i],
-                        standardized_kurt[i]
-                    ]
-            else:
-                # 정규화 없이 원본 값을 추가
-                df[f'{axis}_rms'] = rms_values
-                df[f'{axis}_skewness'] = skewness_values
-                df[f'{axis}_kurtosis'] = kurtosis_values
-                df[f'{axis}_peak'] = peak_values
-            
-            df[f'{axis}_fused_features'] = fused_feature_values
-    
-    return train_df, val_df, test_df
-
-def add_train_statistics(df: pd.DataFrame, target_axis: List[str], is_standardize: bool = True) -> pd.DataFrame:
-
     for axis in target_axis:
         # 각 축에 대해 결과 리스트 초기화
         rms_values = []
@@ -288,7 +210,7 @@ def add_train_statistics(df: pd.DataFrame, target_axis: List[str], is_standardiz
         if is_standardize:
             # numpy 배열로 변환 후 정규화
             temp_np_array = temp_df.to_numpy()
-            means, std_devs, standardized_data = normalize_data(temp_np_array)
+            standardized_data = normalize_data(temp_np_array)
 
             # 정규화된 값만 데이터프레임에 추가
             df[f'{axis}_rms'] = standardized_data[:, 0]
@@ -308,7 +230,63 @@ def add_train_statistics(df: pd.DataFrame, target_axis: List[str], is_standardiz
 
         df[f'{axis}_fused_features'] = fused_feature_values
 
-    return df, means, std_devs
+    return df
+
+# def add_train_statistics(df: pd.DataFrame, target_axis: List[str], is_standardize: bool = True) -> pd.DataFrame:
+
+#     for axis in target_axis:
+#         # 각 축에 대해 결과 리스트 초기화
+#         rms_values = []
+#         peak_values = []
+#         skewness_values = []
+#         kurtosis_values = []
+#         fused_feature_values = []
+
+#         # 축 데이터가 존재하는지 확인
+#         if axis not in df.columns:
+#             raise ValueError(f"Target axis '{axis}' not found in DataFrame columns.")
+
+#         # 통계 값 계산
+#         for sample in df[axis]:
+#             peak, _, rms, _, _, skew, kurt = calculate_statistics(sample)
+#             rms_values.append(rms)
+#             peak_values.append(peak)
+#             skewness_values.append(skew)
+#             kurtosis_values.append(kurt)
+#             fused_feature_values.append([rms, skew, kurt])
+
+#         # 임시 데이터프레임 생성
+#         temp_df = pd.DataFrame({
+#             f'{axis}_rms': rms_values,
+#             f'{axis}_skewness': skewness_values,
+#             f'{axis}_kurtosis': kurtosis_values,
+#             f'{axis}_peak': peak_values
+#         })
+
+#         if is_standardize:
+#             # numpy 배열로 변환 후 정규화
+#             temp_np_array = temp_df.to_numpy()
+#             means, std_devs, standardized_data = normalize_data(temp_np_array)
+
+#             # 정규화된 값만 데이터프레임에 추가
+#             df[f'{axis}_rms'] = standardized_data[:, 0]
+#             df[f'{axis}_skewness'] = standardized_data[:, 1]
+#             df[f'{axis}_kurtosis'] = standardized_data[:, 2]
+#             df[f'{axis}_peak'] = standardized_data[:, 3]
+
+#             # fused_feature값도 정규화된 값으로 갱신
+#             for i in range(len(df)):
+#                 fused_feature_values[i] = list(standardized_data[i, :])
+#         else:
+#             # 정규화 없이 원본 값을 추가
+#             df[f'{axis}_rms'] = rms_values
+#             df[f'{axis}_skewness'] = skewness_values
+#             df[f'{axis}_kurtosis'] = kurtosis_values
+#             df[f'{axis}_peak'] = peak_values
+
+#         df[f'{axis}_fused_features'] = fused_feature_values
+
+#     return df, means, std_devs
 
 
 def augment_dataframe(

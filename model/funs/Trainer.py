@@ -1,6 +1,8 @@
 # Trainer.py
 
+from sklearn.model_selection import KFold
 import numpy as np
+from tqdm import tqdm
 
 class Trainer:
     def __init__(self, yaml_config):
@@ -28,29 +30,36 @@ class Trainer:
         test_accuracy = test_metrics[1]      
         return test_accuracy, test_loss
 
-    def get_best_model(self, model, X_train, y_train, X_val, y_val, X_test, y_test):
+    def get_best_model(self, model, X, Y, n_splits=10):
+        """
+        KFold Cross-Validation을 사용하여 모델 훈련과 평가를 수행하는 함수
+        """
+        kf = KFold(n_splits=n_splits, shuffle=True)
+        accuracies = []
+        losses = []
+        all_y_true = []
+        all_y_pred = []
 
-        print(f"\nStarting training & validation to find best model!")
-        model = model.get_model(X_train)
-        
-        val_true_list = []
-        val_pred_list = []
-        test_true_list = []
-        test_pred_list = []
+        for fold, (train_index, test_index) in enumerate(tqdm(kf.split(X), total=kf.get_n_splits(), desc="Folds")):
+            X_train, X_test = X[train_index], X[test_index]
+            y_train, y_test = Y[train_index], Y[test_index]
 
-        val_accuracy, val_loss, _ = self.train_step(model, X_train, y_train, X_val, y_val)
-        test_accuracy, test_loss = self.test_model(model, X_test, y_test)
+            # 모델 정의 (get_model을 통해 모델 객체를 받아옴)
+            model_instance = model.get_model(X_train)
 
-        test_pred_probs = model.predict(X_test)
-        test_pred = np.argmax(test_pred_probs, axis=1)
-        test_true_list.append(y_test)
-        test_pred_list.append(test_pred)
+            # 모델 훈련
+            accuracy, loss, _ = self.train_step(model_instance, X_train, y_train, X_test, y_test)
 
-        val_pred_probs = model.predict(X_val)
-        val_pred = np.argmax(val_pred_probs, axis=1)
-        val_true_list.append(y_val)
-        val_pred_list.append(val_pred)
+            # 예측값 및 실제값 저장
+            y_pred_probs = model_instance.predict(X_test)
+            y_pred = np.argmax(y_pred_probs, axis=1)
+            all_y_true.append(y_test)
+            all_y_pred.append(y_pred)
 
-        return val_accuracy, val_loss, test_accuracy, test_loss, test_true_list, test_pred_list, val_true_list, val_pred_list
+            if not np.isnan(accuracy) and not np.isnan(loss):
+                accuracies.append(accuracy)
+                losses.append(loss)
+            else:
+                print(f"Warning: Fold {fold+1} produced NaN accuracy or loss")
 
-        
+        return accuracies, losses, all_y_true, all_y_pred
