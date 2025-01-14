@@ -12,14 +12,12 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStreamReader
 import java.io.IOException
-import java.io.FileWriter
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.math.exp
-import kotlin.math.ln
+import org.tensorflow.lite.Interpreter
 
 class TestActivity : AppCompatActivity() {
     private lateinit var resultTextView: TextView
@@ -32,30 +30,31 @@ class TestActivity : AppCompatActivity() {
 
         // CSV 파일을 비동기적으로 읽고 모델을 실행
         GlobalScope.launch(Dispatchers.IO) {
-            val data = readCsvAndParseListFromAssets("data.csv")
+            val data = readCsvAndParseListFromAssets("dataANN.csv")
             val modelFiles = assets.list("") // assets 폴더 내 모든 파일을 나열합니다.
 
             val results = mutableListOf<String>() // CSV로 저장할 결과 리스트
 
+
             modelFiles?.forEach { modelFile ->
-                if (modelFile.endsWith(".ptl")) {
+                if (modelFile.endsWith(".tflite")) {
                     Log.d("TestActivity", "Processing model: $modelFile")
-                    val modelFilePath = assetFilePath(this@TestActivity, modelFile)
-                    val modelResults = evaluateModel(modelFilePath, data)
+                    val modelResults = evaluateTFliteModel(modelFile, data)
 
                     val acc = modelResults.first
                     val loss = modelResults.second
+                    val acc_per_label = modelResults.second
 
                     // 결과 로그 출력
-                    Log.d("TestActivity", "Model: $modelFile - Accuracy: $acc, Loss: $loss")
+                    Log.d("TestActivity", """TFlite Model: $modelFile - Accuracy: $acc,
+                        |acc_per_label: $acc_per_label
+                    """.trimMargin())
 
                     // CSV 결과에 추가
                     results.add("$modelFile,$acc,$loss")
                 }
             }
 
-            // CSV 파일로 저장
-            writeResultsToCsv(results)
 
             // 결과를 메인 스레드에서 처리
             withContext(Dispatchers.Main) {
@@ -64,24 +63,6 @@ class TestActivity : AppCompatActivity() {
         }
     }
 
-    fun crossEntropyLoss(logits: Array<FloatArray>, labels: IntArray): Float {
-        return logits.mapIndexed { index, sampleLogits ->
-            val label = labels[index]
-            require(label in sampleLogits.indices) {
-                "레이블($label)이 유효한 범위(0-${sampleLogits.size - 1})를 벗어났습니다."
-            }
-
-            // Softmax 계산
-            val expValues = sampleLogits.map { exp((it).toDouble()).toFloat() }
-            val sumExp = expValues.sum()
-
-            // 해당 클래스의 probability
-            val probability = expValues[label] / sumExp
-
-            // Cross Entropy 계산 (-log(probability))
-            -ln(probability.toDouble()).toFloat()
-        }.average().toFloat()
-    }
 
     fun readCsvAndParseListFromAssets(csvFileName: String): List<Triple<String, String, List<Float>>> {
         val data = mutableListOf<Triple<String, String, List<Float>>>()
@@ -99,8 +80,14 @@ class TestActivity : AppCompatActivity() {
                     val faultType = columns[0]
                     val label = columns[1]
                     val listString = columns[2] // z 열의 데이터
+                    var rms_tmp = columns[3]
+                    val fused = columns[7]
+
+                    val rms = listOf(rms_tmp.toFloatOrNull() ?: 0f)
+
+
                     val parsedList = parseStringToList(listString)
-                    data.add(Triple(faultType, label, parsedList))
+                    data.add(Triple(faultType, label, rms))
                 }
             }
 
@@ -121,7 +108,7 @@ class TestActivity : AppCompatActivity() {
             .mapNotNull { it.toFloatOrNull() } // 각 항목을 Float으로 변환하고 실패 시 null 처리
     }
 
-    private fun runModel(inputData: List<Float>, modelFilePath: String): FloatArray {
+    private fun runPTLModel(inputData: List<Float>, modelFilePath: String): FloatArray {
         try {
             // 1. 모델 로드
             val model = LiteModuleLoader.load(modelFilePath)
@@ -143,6 +130,35 @@ class TestActivity : AppCompatActivity() {
         }
     }
 
+    private fun runTFliteModel(inputData: List<Float>, modelFilePath: String): FloatArray {
+        try {
+            // 1. 모델 로드
+            val modelFile = File(modelFilePath)
+            val tfliteInterpreter = Interpreter(modelFile)
+
+            // 2. 입력 데이터 검증
+            if (inputData.size != 2048) {
+                throw IllegalArgumentException("Input data size must be 2048, but got ${inputData.size}")
+            }
+
+            // 3. 텐서 변환 및 추론
+            val inputTensor = Array(1) { Array(1) { FloatArray(2048) } }
+            inputTensor[0][0] = inputData.toFloatArray()
+
+            val outputTensor = Array(1) { FloatArray(4) }
+
+            Log.d("TFLite", "Running inference on model")
+            // 5. 추론 실행
+            tfliteInterpreter.run(inputTensor, outputTensor)
+
+            // 6. 결과 반환
+            return outputTensor[0]
+
+        } catch (e: Exception) {
+            Log.e("PyTorch", "Error in runModel: ${e.message}", e)
+            throw e
+        }
+    }
     @Throws(IOException::class)
     private fun assetFilePath(context: Context, assetName: String): String {
         val file = File(context.filesDir, assetName)
@@ -160,40 +176,96 @@ class TestActivity : AppCompatActivity() {
         return file.absolutePath
     }
 
-    private fun evaluateModel(modelFilePath: String, data: List<Triple<String, String, List<Float>>>): Pair<Float, Float> {
-        var totalLoss = 0.0f
+    private fun evaluateTFliteModel(
+        modelFile: String,
+        data: List<Triple<String, String, List<Float>>>
+    ): Pair<Float, Map<Int, Float>> {
         var correct = 0
         var total = 0
-        data.forEach { (_, label, zList) ->
-            val prediction = runModel(zList, modelFilePath)
 
-            // Cross Entropy Loss 계산
-            val loss = crossEntropyLoss(arrayOf(prediction), intArrayOf(label.toInt()))
-            totalLoss += loss
+        var model: MyModel
+        model = MyModel(this, modelFile)
+
+        // 라벨 별 정확도 계산을 위한 데이터 구조
+        val labelCorrectCounts = mutableMapOf<Int, Int>()
+        val labelTotalCounts = mutableMapOf<Int, Int>()
+
+        data.forEach { (_, label, zList) ->
+            val inputTensor = Array(1) { Array(1) { FloatArray(1) } }
+            inputTensor[0][0] = zList.toFloatArray()
+
+            // 예측 실행
+            val output = model.predict(inputTensor)
+
+            val prediction = output
 
             // 정확도 계산
             val predictedLabel = prediction.indices.maxByOrNull { prediction[it] } ?: -1
-            if (label.toInt() == predictedLabel) {
+            val trueLabel = label.toInt()
+
+            // 라벨 별 데이터 갱신
+            labelTotalCounts[trueLabel] = labelTotalCounts.getOrDefault(trueLabel, 0) + 1
+            if (trueLabel == predictedLabel) {
                 correct++
+                labelCorrectCounts[trueLabel] = labelCorrectCounts.getOrDefault(trueLabel, 0) + 1
             }
 
             total++
         }
-        val averageLoss = totalLoss / total
+
+
+//        val averageLoss = totalLoss / total
         val accuracy = correct.toFloat() / total
-        return Pair(accuracy, averageLoss)
+
+        // 라벨 별 정확도 계산
+        val labelAccuracies = labelTotalCounts.mapValues { (label, count) ->
+            val correctCount = labelCorrectCounts.getOrDefault(label, 0)
+            correctCount.toFloat() / count
+        }
+
+        return Pair(accuracy, labelAccuracies)
     }
 
-    private fun writeResultsToCsv(results: List<String>) {
-        try {
-            val file = File(applicationContext.filesDir, "model_evaluation_results.csv")
-            val writer = FileWriter(file)
-            writer.append("Model,Accuracy,Loss\n")
-            results.forEach { writer.append(it).append("\n") }
-            writer.flush()
-            writer.close()
-        } catch (e: IOException) {
-            Log.e("TestActivity", "Error writing CSV file: ${e.message}")
+    private fun evaluatePTLModel(
+        modelFilePath: String,
+        data: List<Triple<String, String, List<Float>>>
+    ): Pair<Float, Map<Int, Float>> {
+//        var totalLoss = 0.0f
+        var correct = 0
+        var total = 0
+
+        // 라벨 별 정확도 계산을 위한 데이터 구조
+        val labelCorrectCounts = mutableMapOf<Int, Int>()
+        val labelTotalCounts = mutableMapOf<Int, Int>()
+
+        data.forEach { (_, label, zList) ->
+            val prediction = runPTLModel(zList, modelFilePath)
+
+            // 정확도 계산
+            val predictedLabel = prediction.indices.maxByOrNull { prediction[it] } ?: -1
+            val trueLabel = label.toInt()
+
+            // 라벨 별 데이터 갱신
+            labelTotalCounts[trueLabel] = labelTotalCounts.getOrDefault(trueLabel, 0) + 1
+            if (trueLabel == predictedLabel) {
+                correct++
+                labelCorrectCounts[trueLabel] = labelCorrectCounts.getOrDefault(trueLabel, 0) + 1
+            }
+
+            total++
         }
+
+
+//        val averageLoss = totalLoss / total
+        val accuracy = correct.toFloat() / total
+
+        // 라벨 별 정확도 계산
+        val labelAccuracies = labelTotalCounts.mapValues { (label, count) ->
+            val correctCount = labelCorrectCounts.getOrDefault(label, 0)
+            correctCount.toFloat() / count
+        }
+
+        return Pair(accuracy, labelAccuracies)
     }
+
 }
