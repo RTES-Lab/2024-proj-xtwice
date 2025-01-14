@@ -87,7 +87,7 @@ class TestActivity : AppCompatActivity() {
 
 
                     val parsedList = parseStringToList(listString)
-                    data.add(Triple(faultType, label, rms))
+                    data.add(Triple(faultType, label, parsedList))
                 }
             }
 
@@ -130,35 +130,6 @@ class TestActivity : AppCompatActivity() {
         }
     }
 
-    private fun runTFliteModel(inputData: List<Float>, modelFilePath: String): FloatArray {
-        try {
-            // 1. 모델 로드
-            val modelFile = File(modelFilePath)
-            val tfliteInterpreter = Interpreter(modelFile)
-
-            // 2. 입력 데이터 검증
-            if (inputData.size != 2048) {
-                throw IllegalArgumentException("Input data size must be 2048, but got ${inputData.size}")
-            }
-
-            // 3. 텐서 변환 및 추론
-            val inputTensor = Array(1) { Array(1) { FloatArray(2048) } }
-            inputTensor[0][0] = inputData.toFloatArray()
-
-            val outputTensor = Array(1) { FloatArray(4) }
-
-            Log.d("TFLite", "Running inference on model")
-            // 5. 추론 실행
-            tfliteInterpreter.run(inputTensor, outputTensor)
-
-            // 6. 결과 반환
-            return outputTensor[0]
-
-        } catch (e: Exception) {
-            Log.e("PyTorch", "Error in runModel: ${e.message}", e)
-            throw e
-        }
-    }
     @Throws(IOException::class)
     private fun assetFilePath(context: Context, assetName: String): String {
         val file = File(context.filesDir, assetName)
@@ -191,7 +162,7 @@ class TestActivity : AppCompatActivity() {
         val labelTotalCounts = mutableMapOf<Int, Int>()
 
         data.forEach { (_, label, zList) ->
-            val inputTensor = Array(1) { Array(1) { FloatArray(1) } }
+            val inputTensor = Array(1) { Array(1) { FloatArray(2048) } }
             inputTensor[0][0] = zList.toFloatArray()
 
             // 예측 실행
