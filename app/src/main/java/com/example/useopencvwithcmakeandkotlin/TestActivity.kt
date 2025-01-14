@@ -1,8 +1,6 @@
 package com.example.useopencvwithcmakeandkotlin
 
 import android.content.Context
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.widget.TextView
@@ -12,8 +10,9 @@ import org.pytorch.Tensor
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileOutputStream
-import java.io.IOException
 import java.io.InputStreamReader
+import java.io.IOException
+import java.io.FileWriter
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -22,7 +21,7 @@ import kotlinx.coroutines.withContext
 import kotlin.math.exp
 import kotlin.math.ln
 
-class TestActivity: AppCompatActivity() {
+class TestActivity : AppCompatActivity() {
     private lateinit var resultTextView: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,46 +30,37 @@ class TestActivity: AppCompatActivity() {
 
         resultTextView = findViewById(R.id.resultTextView)
 
-        // prediction_list를 담을 곳
-        val predictionList = mutableListOf<IntArray>()
-        var val_loss = 0.0f
-
         // CSV 파일을 비동기적으로 읽고 모델을 실행
         GlobalScope.launch(Dispatchers.IO) {
             val data = readCsvAndParseListFromAssets("data.csv")
-            var correct = 0
+            val modelFiles = assets.list("") // assets 폴더 내 모든 파일을 나열합니다.
 
-            // 각 행의 z 데이터를 runModel에 전달하고 prediction_list에 저장
-            data.forEachIndexed { index, (_, label, zList) ->
-                val prediction = runModel(zList)
-                val loss = crossEntropyLoss(arrayOf(prediction), intArrayOf(label.toInt()))
-                val_loss += loss
+            val results = mutableListOf<String>() // CSV로 저장할 결과 리스트
 
-                val predictedLabel = prediction.indices.maxByOrNull { prediction[it] } ?: -1
-                predictionList.add(intArrayOf(predictedLabel))
+            modelFiles?.forEach { modelFile ->
+                if (modelFile.endsWith(".ptl")) {
+                    Log.d("TestActivity", "Processing model: $modelFile")
+                    val modelFilePath = assetFilePath(this@TestActivity, modelFile)
+                    val modelResults = evaluateModel(modelFilePath, data)
 
-                // label과 prediction 비교
-                val actualLabel = label.toIntOrNull()
-                if (actualLabel == predictedLabel) {
-                    correct++
+                    val acc = modelResults.first
+                    val loss = modelResults.second
+
+                    // 결과 로그 출력
+                    Log.d("TestActivity", "Model: $modelFile - Accuracy: $acc, Loss: $loss")
+
+                    // CSV 결과에 추가
+                    results.add("$modelFile,$acc,$loss")
                 }
-
-                Log.d("TestActivity", "Row $index - Actual: $actualLabel, Predicted: $predictedLabel")
-                Log.d("TestActivity", "Loss: $loss")
             }
 
-            val_loss /= (data.size)
+            // CSV 파일로 저장
+            writeResultsToCsv(results)
+
             // 결과를 메인 스레드에서 처리
             withContext(Dispatchers.Main) {
-                Log.d("TestActivity", "data sizw: ${data.size}")
-                Log.d("TestActivity", "Total predictions: ${predictionList.size}")
-                Log.d("TestActivity", "Predictions: ${predictionList.joinToString { it.joinToString(", ", "[", "]") }}")
-                Log.d("TestActivity", "Loss: $val_loss")
-                resultTextView.text = """
-                    |Correct predictions: $correct
-                    |Loss: $val_loss""".trimMargin()
+                resultTextView.text = "Model evaluation completed."
             }
-
         }
     }
 
@@ -93,13 +83,8 @@ class TestActivity: AppCompatActivity() {
         }.average().toFloat()
     }
 
-
-
-
-    // CSV 파일을 읽고 데이터를 반환
     fun readCsvAndParseListFromAssets(csvFileName: String): List<Triple<String, String, List<Float>>> {
         val data = mutableListOf<Triple<String, String, List<Float>>>()
-        val labels = mutableListOf<IntArray>()
 
         try {
             val inputStream = assets.open(csvFileName)
@@ -110,18 +95,12 @@ class TestActivity: AppCompatActivity() {
 
             reader.forEachLine { line ->
                 val columns = line.split(",").map { it.trim() }
-
-                // 각 줄에 두 개 이상의 열이 있어야 함
                 if (columns.size >= 3) {
                     val faultType = columns[0]
                     val label = columns[1]
                     val listString = columns[2] // z 열의 데이터
-
-                    // 문자열로 저장된 리스트를 다시 리스트로 변환
                     val parsedList = parseStringToList(listString)
-
                     data.add(Triple(faultType, label, parsedList))
-                    labels.add(label.split(" ").map { it.toInt() }.toIntArray())
                 }
             }
 
@@ -133,7 +112,6 @@ class TestActivity: AppCompatActivity() {
         return data
     }
 
-    // 문자열로 된 리스트를 다시 리스트로 변환하는 함수
     fun parseStringToList(listString: String): List<Float> {
         return listString
             .removeSurrounding("[", "]") // 대괄호 제거
@@ -143,33 +121,20 @@ class TestActivity: AppCompatActivity() {
             .mapNotNull { it.toFloatOrNull() } // 각 항목을 Float으로 변환하고 실패 시 null 처리
     }
 
-    private fun runModel(inputData: List<Float>): FloatArray {
+    private fun runModel(inputData: List<Float>, modelFilePath: String): FloatArray {
         try {
-            // 1. 파일 경로 확인
-            val modelFilePath = assetFilePath(this, "wdcnn.ptl")
-            Log.d("PyTorch", "Model path: $modelFilePath")
-
-            // 2. 파일 존재 확인
-            if (!File(modelFilePath).exists()) {
-                throw IllegalStateException("Model file not found at $modelFilePath")
-            }
-
-            // 3. 모델 로드
+            // 1. 모델 로드
             val model = LiteModuleLoader.load(modelFilePath)
-            Log.d("PyTorch", "Model loaded successfully")
 
-            // 4. 입력 데이터 검증
+            // 2. 입력 데이터 검증
             if (inputData.size != 2048) {
                 throw IllegalArgumentException("Input data size must be 2048, but got ${inputData.size}")
             }
 
-            // 5. 텐서 변환 및 추론
-            val inputTensor = Tensor.fromBlob(
-                inputData.toFloatArray(),
-                longArrayOf(1, 1, 2048)
-            )
+            // 3. 텐서 변환 및 추론
+            val inputTensor = Tensor.fromBlob(inputData.toFloatArray(), longArrayOf(1, 1, 2048))
 
-            // 6. 추론 실행 및 결과 반환
+            // 4. 추론 실행 및 결과 반환
             return model.forward(IValue.from(inputTensor)).toTensor().dataAsFloatArray
 
         } catch (e: Exception) {
@@ -193,5 +158,42 @@ class TestActivity: AppCompatActivity() {
             }
         }
         return file.absolutePath
+    }
+
+    private fun evaluateModel(modelFilePath: String, data: List<Triple<String, String, List<Float>>>): Pair<Float, Float> {
+        var totalLoss = 0.0f
+        var correct = 0
+        var total = 0
+        data.forEach { (_, label, zList) ->
+            val prediction = runModel(zList, modelFilePath)
+
+            // Cross Entropy Loss 계산
+            val loss = crossEntropyLoss(arrayOf(prediction), intArrayOf(label.toInt()))
+            totalLoss += loss
+
+            // 정확도 계산
+            val predictedLabel = prediction.indices.maxByOrNull { prediction[it] } ?: -1
+            if (label.toInt() == predictedLabel) {
+                correct++
+            }
+
+            total++
+        }
+        val averageLoss = totalLoss / total
+        val accuracy = correct.toFloat() / total
+        return Pair(accuracy, averageLoss)
+    }
+
+    private fun writeResultsToCsv(results: List<String>) {
+        try {
+            val file = File(applicationContext.filesDir, "model_evaluation_results.csv")
+            val writer = FileWriter(file)
+            writer.append("Model,Accuracy,Loss\n")
+            results.forEach { writer.append(it).append("\n") }
+            writer.flush()
+            writer.close()
+        } catch (e: IOException) {
+            Log.e("TestActivity", "Error writing CSV file: ${e.message}")
+        }
     }
 }

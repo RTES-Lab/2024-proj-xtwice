@@ -189,7 +189,7 @@ class FaultDiagnosisActivity : AppCompatActivity() {
     private fun runModel(inputData: List<Float>): FloatArray {
         try {
             // 1. 파일 경로 확인
-            val modelFilePath = assetFilePath(this, "wdcnn.ptl")
+            val modelFilePath = assetFilePath(this, "Fwdcnn7.ptl")
             Log.d("PyTorch", "Model path: $modelFilePath")
 
             // 2. 파일 존재 확인
@@ -202,6 +202,7 @@ class FaultDiagnosisActivity : AppCompatActivity() {
             Log.d("PyTorch", "Model loaded successfully")
 
             // 4. 입력 데이터 검증
+
             if (inputData.size != 2048) {
                 throw IllegalArgumentException("Input data size must be 2048, but got ${inputData.size}")
             }
