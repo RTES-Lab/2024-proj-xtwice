@@ -42,12 +42,27 @@
                 android:textStyle="bold"/>
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="마커의 색상, 채도, 명도 범위를 설정해주세요."
-                android:textColor="#000000"
-                android:textSize="14sp"/>
+                android:layout_marginTop="16dp"
+                android:background="#F5F5F5"
+                android:padding="12dp"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:text="※ HSV 설정 가이드"
+                android:textStyle="bold"
+                android:textColor="#000000"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:paddingHorizontal="12dp"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:text="• 마커의 형상이 잘 보이게 HSV 범위를 조절해 주세요.\n• 이미 마커가 잘 보인다면 조절할 필요가 없습니다.\n• 마커의 색상, 채도, 명도 범위를 설정해주세요."
+                android:textColor="#000000"/>
+
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
