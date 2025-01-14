@@ -86,7 +86,7 @@ class TestActivity : AppCompatActivity() {
                     val rms = listOf(rms_tmp.toFloatOrNull() ?: 0f)
 
 
-                    val parsedList = parseStringToList(listString)
+                    val parsedList = parseStringToList(fused)
                     data.add(Triple(faultType, label, parsedList))
                 }
             }
@@ -162,7 +162,7 @@ class TestActivity : AppCompatActivity() {
         val labelTotalCounts = mutableMapOf<Int, Int>()
 
         data.forEach { (_, label, zList) ->
-            val inputTensor = Array(1) { Array(1) { FloatArray(2048) } }
+            val inputTensor = Array(1) { Array(1) { FloatArray(3) } }
             inputTensor[0][0] = zList.toFloatArray()
 
             // 예측 실행
