@@ -90,7 +90,7 @@
                 android:paddingHorizontal="12dp"
                 android:textSize="14sp"
                 android:lineSpacingExtra="4dp"
-                android:text="• 마커가 움직일 것으로 예상되는 범위보다 여유있게 설정해주세요.\n• 너무 타이트하게 설정하면 마커 추적이 어려울 수 있습니다."
+                android:text="• 아래 있는 바를 이용하여 네모 박스 크기를 조절할 수 있습니다.\n• 마커가 움직일 것으로 예상되는 범위보다 여유있게 설정해주세요.\n• 너무 타이트하게 설정하면 마커 추적이 어려울 수 있습니다."
                 android:textColor="#000000"/>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
@@ -126,7 +126,7 @@
                 android:id="@+id/roiSizeTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="ROI 크기: 5 px"
+                android:text="네모 박스 크기: 5 px"
                 android:textColor="#2C3E50"
                 android:textSize="16sp"
                 android:textStyle="bold"/>
