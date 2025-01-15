@@ -89,7 +89,7 @@ class FaultDiagnosisActivity : AppCompatActivity() {
                         spannableString.append("예상 결함:  ")
                         
                         // 결함 종류와 확률을 SpannableString으로 생성
-                        val resultText = "${predictedClass}  ${String.format("%.1f", probabilities[maxLogitIndex] * 100)}%"
+                        val resultText = "${predictedClass}  ${String.format("%.2f", probabilities[maxLogitIndex] * 100)}%"
                         val resultSpan = SpannableString(resultText)
                         
                         // 결함 종류에 따라 색상 설정
@@ -118,7 +118,7 @@ class FaultDiagnosisActivity : AppCompatActivity() {
                         // 다른 결함 확률 표시
                         classes.forEachIndexed { index, className ->
                             if (index != maxLogitIndex) {
-                                val probText = "${className}  ${String.format("%.1f", probabilities[index] * 100)}%\n"
+                                val probText = "${className}  ${String.format("%.2f", probabilities[index] * 100)}%\n"
                                 val probSpan = SpannableString(probText)
                                 probSpan.setSpan(
                                     StyleSpan(Typeface.BOLD),
