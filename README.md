@@ -1,4 +1,4 @@
-# 2024~2025 실전문제연구단(X-twice)
+# 2024~2025 실전문제연구단 (X-twice)
 
 스마트폰 내장 초고속 카메라 기반 비접촉식 기계 결함 진단 시스템 
 
@@ -11,13 +11,13 @@
 ## 2. 개발 환경 
 
 * **OS**: Ubuntu 22.04 및 Windows 10
-* **Language**: Python 3.8+
+* **Language**: Python 3.8+ 및 kotlin 1.9.0
 * **Dependencies**:
-* **Hardware**: (예: NVIDIA RTX 3090, STM32F407 Discovery Kit)
+* **Hardware**: Intel Core i7-13700 CPU @ 5.2 GHz
 
 ---
 
-## 3. 폴더 구조 (예시)
+## 3. 폴더 구조 
 ```text
 ├── src/            # 소스 코드
 ├── data/           # 데이터셋 
