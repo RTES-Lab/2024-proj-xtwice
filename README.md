@@ -12,7 +12,6 @@
 
 * **OS**: Ubuntu 22.04 및 Windows 10
 * **Language**: Python 3.8+ 및 kotlin 1.9.0
-* **Dependencies**:
 * **Hardware**: Intel Core i7-13700 CPU @ 5.2 GHz
 
 ---
@@ -28,15 +27,8 @@
 
 ---
 
-## 4. 실행 방법 (예시, Optional)
-1. 데이터 전처리: ```python data/preprocess.py```
-2. 모델 학습: ```python src/main.py --config config.yaml```
-3. 결과 시각화: ```python src/visualize.py```
-
----
-
-## 5. 브랜치 구조 (예시, Optional)
+## 4. 브랜치 구조 (예시, Optional)
 
 * **main**: 메인 브랜치
-* **feature/xxx**: xxx 기능 개발 브랜치
-* **docs**: 문서 관련 브랜치
+* **app_integration**: 앱 개발 브랜치
+* **sr**: 모델 훈련 관련 브랜치
